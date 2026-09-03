@@ -448,6 +448,72 @@
     const STORAGE_KEY_DAILY = 'diabetic_meal_tracker_daily_v2';
     const STORAGE_KEY_MEMORY = 'diabetic_meal_tracker_memory_v2';
 
+    // オフライン・即時判定用の主要料理栄養データベース（糖尿病管理に特化した糖質・カロリー基準値）
+    const COMMON_FOOD_DB = [
+      // 丼もの・ご飯もの
+      { keywords: ['かつ丼', 'カツ丼', 'ロースかつ丼', 'ヒレカツ丼'], carbs: 115.0, calories: 920, carb: 'カツ衣・甘辛タレ・白米に糖質多め', name: 'かつ丼' },
+      { keywords: ['牛丼', '牛めし'], carbs: 98.0, calories: 730, carb: '甘辛タレ・ご飯多め', name: '牛丼' },
+      { keywords: ['親子丼'], carbs: 95.0, calories: 650, carb: 'みりん・砂糖タレ・ご飯多め', name: '親子丼' },
+      { keywords: ['天丼', 'てんどん'], carbs: 110.0, calories: 830, carb: '天ぷら衣・甘だれに糖質注意', name: '天丼' },
+      { keywords: ['海鮮丼', '鉄火丼', 'まぐろ丼'], carbs: 85.0, calories: 580, carb: '酢飯・白米の量に注意', name: '海鮮丼' },
+      { keywords: ['カレーライス', 'カレー', 'カツカレー'], carbs: 120.0, calories: 850, carb: 'ルウの小麦粉と白米で高糖質', name: 'カレーライス' },
+      { keywords: ['炒飯', 'チャーハン', '焼き飯'], carbs: 90.0, calories: 720, carb: 'ご飯しっかり1人前', name: 'チャーハン' },
+      { keywords: ['オムライス'], carbs: 92.0, calories: 760, carb: 'ケチャップライス・ケチャップ糖質', name: 'オムライス' },
+      { keywords: ['中華丼'], carbs: 88.0, calories: 630, carb: '具沢山だが餡の片栗粉とご飯に糖質', name: '中華丼' },
+      { keywords: ['うな丼', 'うな重', '鰻'], carbs: 95.0, calories: 750, carb: '甘だれ・ご飯多め', name: 'うな丼' },
+
+      // 主食単体
+      { keywords: ['白米', 'ご飯', 'ごはん', 'お米'], carbs: 55.0, calories: 240, carb: 'ご飯1膳（約150g）', name: 'ご飯（1膳）' },
+      { keywords: ['玄米', '麦飯', '雑穀米'], carbs: 48.0, calories: 230, carb: '食物繊維豊富・低GI', name: '玄米・雑穀米（1膳）' },
+      { keywords: ['おにぎり', 'おむすび'], carbs: 39.0, calories: 175, carb: 'おにぎり1個', name: 'おにぎり（1個）' },
+      { keywords: ['食パン', 'トースト'], carbs: 28.0, calories: 160, carb: '6枚切り1枚', name: '食パン（1枚）' },
+      { keywords: ['クロワッサン'], carbs: 19.0, calories: 180, carb: '脂質高め・糖質はやや控えめ', name: 'クロワッサン' },
+
+      // 麺類
+      { keywords: ['ラーメン', 'らーめん', '醤油ラーメン', '味噌ラーメン', '豚骨ラーメン'], carbs: 68.0, calories: 550, carb: '中華麺1玉に糖質集中', name: 'ラーメン' },
+      { keywords: ['つけ麺'], carbs: 85.0, calories: 750, carb: '麺量多め・濃厚スープ', name: 'つけ麺' },
+      { keywords: ['うどん', 'かけうどん', '讃岐うどん'], carbs: 58.0, calories: 340, carb: 'うどん麺は消化吸収が早い', name: 'かけうどん' },
+      { keywords: ['ざる蕎麦', '蕎麦', 'そば', 'かけそば'], carbs: 52.0, calories: 350, carb: 'ルチン含有・うどんより低GI', name: 'そば' },
+      { keywords: ['パスタ', 'スパゲティ', 'ナポリタン', 'ミートソース', 'カルボナーラ'], carbs: 75.0, calories: 650, carb: 'デュラム小麦パスタ1人前', name: 'パスタ' },
+      { keywords: ['焼きそば', 'ソース焼きそば'], carbs: 65.0, calories: 520, carb: '中華麺と濃厚ソース', name: '焼きそば' },
+
+      // 定食・主菜
+      { keywords: ['唐揚げ', 'から揚げ', 'からあげ'], carbs: 16.0, calories: 380, carb: '衣の片栗粉・小麦粉', name: '鶏の唐揚げ' },
+      { keywords: ['生姜焼き', '豚の生姜焼き'], carbs: 12.0, calories: 390, carb: 'タレの砂糖・みりん', name: '豚の生姜焼き' },
+      { keywords: ['ハンバーグ'], carbs: 15.0, calories: 420, carb: 'つなぎのパン粉とソース', name: 'ハンバーグ' },
+      { keywords: ['焼き鮭', '鮭の塩焼き', '焼魚', '焼き魚', 'サバの塩焼き'], carbs: 0.5, calories: 210, carb: 'ほぼ糖質ゼロ・良質なたんぱく質', name: '焼き魚' },
+      { keywords: ['刺身', 'お刺身'], carbs: 0.8, calories: 160, carb: '超低糖質・高たんぱく', name: 'お刺身盛り合わせ' },
+      { keywords: ['餃子', 'ぎょうざ'], carbs: 28.0, calories: 340, carb: '皮の小麦粉（6個分）', name: '焼き餃子（6個）' },
+      { keywords: ['麻婆豆腐'], carbs: 10.0, calories: 320, carb: '豆板醤・とろみ付け片栗粉', name: '麻婆豆腐' },
+      { keywords: ['ステーキ'], carbs: 2.0, calories: 480, carb: '肉単体は低糖質・タレに注意', name: '牛ステーキ' },
+      { keywords: ['豚カツ', 'とんかつ', 'ロースカツ'], carbs: 22.0, calories: 550, carb: 'パン粉衣とソースに糖質', name: 'とんかつ' },
+
+      // 副菜・小鉢・汁物
+      { keywords: ['サラダ', '生野菜', 'グリーンサラダ'], carbs: 4.5, calories: 45, carb: '食物繊維・ベジファースト推奨', name: '野菜サラダ' },
+      { keywords: ['味噌汁', 'みそ汁'], carbs: 4.0, calories: 45, carb: '具材による（海藻・豆腐推奨）', name: '味噌汁' },
+      { keywords: ['納豆'], carbs: 3.5, calories: 90, carb: '食物繊維・低糖質発酵食品', name: '納豆（1パック）' },
+      { keywords: ['冷奴', '豆腐'], carbs: 2.0, calories: 80, carb: '低糖質・良質なたんぱく質', name: '冷奴' },
+      { keywords: ['ほうれん草のおひたし', 'おひたし'], carbs: 1.5, calories: 25, carb: '極めて低糖質', name: 'おひたし' },
+      { keywords: ['煮物', '肉じゃが'], carbs: 22.0, calories: 240, carb: 'じゃがいも・人参・砂糖・みりん', name: '肉じゃが' },
+      { keywords: ['卵焼き', '目玉焼き', 'ゆで卵'], carbs: 1.0, calories: 95, carb: '超低糖質（甘い卵焼きは+3g）', name: '卵料理' }
+    ];
+
+    // 入力文から内蔵データベースを賢くマッチングする関数
+    function findLocalFoodMatch(text) {
+      if (!text) return null;
+      const lower = text.toLowerCase().replace(/\s+/g, '');
+      
+      // 完全または主要キーワードによる走査
+      for (const item of COMMON_FOOD_DB) {
+        for (const kw of item.keywords) {
+          if (lower.includes(kw.toLowerCase())) {
+            return item;
+          }
+        }
+      }
+      return null;
+    }
+
     let selectedDate = getTodayString();
     let allMeals = [];
     let dailyRecords = {};
@@ -1155,21 +1221,6 @@
       btnVoiceInput.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
     }
 
-    btnVoiceInput.addEventListener('click', () => {
-      if (!recognition) {
-        initSpeechRecognition();
-      }
-      if (isListening) {
-        recognition.stop();
-      } else {
-        try {
-          recognition.start();
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    });
-
     async function estimateNutritionWithAI() {
       const text = inputMealContent.value.trim();
       if (!text) {
@@ -1180,11 +1231,25 @@
 
       btnAiEstimate.disabled = true;
       aiBtnText.textContent = '計算中...';
-      aiStatusMsg.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> AIが食品データを照会し、糖質とカロリーを推計しています...';
+      aiStatusMsg.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 栄養データベースとAIを照会しています...';
 
+      // 1. まず手元の定番料理データベースを照会（確実に高速マッチ）
+      const localMatch = findLocalFoodMatch(text);
+      let matchedLocally = false;
+      if (localMatch) {
+        // 内蔵DBにヒットした場合、即座に安全なデフォルト値としてセット
+        inputMealCarbsNum.value = localMatch.carbs;
+        inputMealCalories.value = localMatch.calories;
+        if (!inputMealCarb.value) {
+          inputMealCarb.value = localMatch.carb;
+        }
+        matchedLocally = true;
+      }
+
+      // 2. クラウドAI（Gemini）で詳細な分量や複合メニューの推計を試行
       const systemPrompt = `あなたは糖尿病専門の管理栄養士です。
 ユーザーが食べた食事内容から、全体の「推定糖質量(g)」と「推定総エネルギー(kcal)」および「主食・糖質の工夫に関する一言メモ」を算出してJSONで返してください。
-糖尿病患者が参考にしやすいよう、一般的な成人1食分として現実的な数値を算出してください。`;
+例えば「かつ丼」であれば糖質約110〜120g、カロリー約900kcal前後になります。一般的な成人1食分として糖尿病管理に適した現実的な数値を算出してください。`;
 
       const userPrompt = `食事内容: 「${text}」`;
 
@@ -1210,43 +1275,48 @@
 
       try {
         let response = null;
-        let delay = 1000;
-        for (let i = 0; i < 3; i++) {
+        let delay = 800;
+        for (let i = 0; i < 2; i++) {
           try {
             response = await fetch(apiUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
-            if (response.ok) break;
+            if (response && response.ok) break;
           } catch (netErr) {
             // retry
           }
           await new Promise(r => setTimeout(r, delay));
-          delay *= 2;
+          delay *= 1.5;
         }
 
-        if (!response || !response.ok) {
-          throw new Error('AI通信エラー');
+        if (response && response.ok) {
+          const data = await response.json();
+          const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) {
+            const parsed = JSON.parse(jsonText);
+            inputMealCarbsNum.value = parsed.carbs !== undefined ? parsed.carbs : (localMatch ? localMatch.carbs : '');
+            inputMealCalories.value = parsed.calories !== undefined ? parsed.calories : (localMatch ? localMatch.calories : '');
+            if (parsed.carbSummary) {
+              inputMealCarb.value = parsed.carbSummary;
+            }
+            aiStatusMsg.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> AI推計完了:</span> 糖質 約${inputMealCarbsNum.value}g / 約${inputMealCalories.value}kcal`;
+            showToast('糖質・カロリーを自動計算しました！');
+            return;
+          }
         }
-
-        const data = await response.json();
-        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!jsonText) throw new Error('解析結果が得られませんでした');
-
-        const parsed = JSON.parse(jsonText);
-        inputMealCarbsNum.value = parsed.carbs !== undefined ? parsed.carbs : '';
-        inputMealCalories.value = parsed.calories !== undefined ? parsed.calories : '';
-        if (!inputMealCarb.value && parsed.carbSummary) {
-          inputMealCarb.value = parsed.carbSummary;
-        }
-
-        aiStatusMsg.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> 推計完了:</span> 糖質 約${parsed.carbs}g / 約${parsed.calories}kcal`;
-        showToast('AI自動計算が完了しました！');
+        throw new Error('AI通信応答なし');
       } catch (err) {
-        console.error('AI Error:', err);
-        // オフラインまたはエラー時の簡易推計フォールバック
-        aiStatusMsg.innerHTML = `<span class="text-amber-700">自動推計が一時的に利用できません。数値を手動でご入力ください。</span>`;
+        console.warn('AI offline or error, checking fallback:', err);
+        // AI通信が失敗しても、内蔵データベースでヒットしていれば完璧に対応
+        if (matchedLocally) {
+          aiStatusMsg.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> 【${localMatch.name}】標準データより算出:</span> 糖質 約${localMatch.carbs}g / 約${localMatch.calories}kcal`;
+          showToast(`「${localMatch.name}」の栄養値を自動入力しました！`);
+        } else {
+          // 内蔵DBにもない珍しいメニューかつオフラインの場合
+          aiStatusMsg.innerHTML = `<span class="text-amber-700">通信状態が不安定です。数値を手動でご入力ください。</span>`;
+        }
       } finally {
         btnAiEstimate.disabled = false;
         aiBtnText.textContent = 'AIで糖質・カロリーを自動計算';
