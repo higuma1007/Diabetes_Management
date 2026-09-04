@@ -18,7 +18,6 @@
       font-family: 'Inter', 'Noto Sans JP', sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
-    /* 印刷時のスタイル定義（提出用A4対応） */
     @media print {
       body * {
         visibility: hidden;
@@ -37,7 +36,6 @@
         display: none !important;
       }
     }
-    /* スクロールバーの微細デザイン */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -53,7 +51,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-24">
 
-  <!-- ヘッダー -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
@@ -62,10 +59,14 @@
         </div>
         <div>
           <h1 class="text-base font-bold text-slate-800 leading-tight">血糖・食事ノート</h1>
-          <p class="text-[11px] text-slate-500">広告なし・リブレ血糖＆糖質管理</p>
+          <p class="text-[11px] text-slate-500">広告なし・リブレ血糖＆血圧・糖質管理</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <button id="btn-open-sync" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 shadow-xs" title="スマホとタブレットのデータ引継ぎ">
+          <i class="fa-solid fa-arrows-rotate text-emerald-600"></i>
+          <span class="hidden sm:inline">端末引継ぎ</span>
+        </button>
         <button id="btn-open-export" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 shadow-xs">
           <i class="fa-solid fa-file-export text-slate-500"></i>
           <span>病院提出・出力</span>
@@ -74,7 +75,6 @@
     </div>
   </header>
 
-  <!-- メインコンテンツ -->
   <main class="max-w-3xl mx-auto px-4 pt-4 space-y-4">
 
     <!-- 日付セレクターと日送り -->
@@ -84,8 +84,8 @@
       </button>
       <div class="text-center">
         <div class="flex items-center justify-center gap-2">
-          <span id="display-date" class="text-base font-bold text-slate-800">2026年9月3日</span>
-          <span id="display-day-badge" class="text-xs px-2 py-0.5 rounded-md font-semibold bg-emerald-100 text-emerald-800">木</span>
+          <span id="display-date" class="text-base font-bold text-slate-800">2026年9月4日</span>
+          <span id="display-day-badge" class="text-xs px-2 py-0.5 rounded-md font-semibold bg-emerald-100 text-emerald-800">金</span>
         </div>
         <button id="btn-today" class="text-[11px] text-emerald-600 hover:underline font-medium mt-0.5">
           今日に戻る
@@ -132,36 +132,73 @@
 
       <div class="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs">
         <div class="flex items-center justify-between text-slate-500 text-xs">
-          <span>体重</span>
-          <i class="fa-solid fa-weight-scale text-sky-500"></i>
+          <span>血圧 (朝/晩)</span>
+          <i class="fa-solid fa-heart-pulse text-red-500"></i>
         </div>
-        <div class="mt-1 flex items-baseline gap-1">
-          <span id="stat-weight" class="text-xl font-bold text-slate-800">-</span>
-          <span class="text-xs text-slate-400">kg</span>
+        <div class="mt-1 flex items-baseline gap-1 truncate">
+          <span id="stat-bp" class="text-sm sm:text-base font-bold text-slate-800">-</span>
         </div>
       </div>
     </section>
 
-    <details class="bg-white rounded-2xl border border-slate-200/80 shadow-xs group overflow-hidden">
-      <summary class="p-3.5 flex items-center justify-between cursor-pointer select-none bg-slate-50/50 hover:bg-slate-50 transition">
-        <div class="flex items-center gap-2 text-xs font-semibold text-slate-700">
-          <i class="fa-solid fa-notes-medical text-emerald-600"></i>
-          <span>本日の体重・服薬・体調メモ</span>
+    <details open class="bg-white rounded-2xl border border-slate-200/80 shadow-xs group overflow-hidden">
+      <summary class="p-3.5 flex items-center justify-between cursor-pointer select-none bg-slate-50/70 hover:bg-slate-50 transition border-b border-slate-100">
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+          <i class="fa-solid fa-heart-pulse text-red-500"></i>
+          <span>血圧測定（朝・晩）＆ 体重・服薬メモ</span>
+          <span class="text-[10px] text-slate-400 font-normal ml-1">お医者さん提出用</span>
         </div>
         <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition-transform"></i>
       </summary>
-      <div class="p-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white">
-        <div>
-          <label class="text-xs font-medium text-slate-600 block mb-1">今朝の体重 (kg)</label>
-          <input type="number" step="0.1" id="daily-weight" placeholder="例: 65.2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      
+      <div class="p-4 space-y-3.5 bg-white">
+        <!-- 血圧入力エリア（朝・晩） -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-red-50/40 p-3 rounded-2xl border border-red-100/70">
+          <!-- 朝の血圧 -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-sun text-amber-500 text-xs"></i> 朝の血圧（起床後）
+              </span>
+              <span class="text-[10px] text-slate-400">上 / 下 / 脈拍</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <input type="number" id="daily-bp-morning-sys" placeholder="上 (125)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-center font-bold focus:ring-2 focus:ring-red-400 focus:outline-none">
+              <input type="number" id="daily-bp-morning-dia" placeholder="下 (82)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-center font-bold focus:ring-2 focus:ring-red-400 focus:outline-none">
+              <input type="number" id="daily-bp-morning-pulse" placeholder="脈拍" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-center text-slate-600 focus:ring-2 focus:ring-red-400 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- 晩の血圧 -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-moon text-indigo-500 text-xs"></i> 晩の血圧（就寝前）
+              </span>
+              <span class="text-[10px] text-slate-400">上 / 下 / 脈拍</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <input type="number" id="daily-bp-evening-sys" placeholder="上 (128)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-center font-bold focus:ring-2 focus:ring-red-400 focus:outline-none">
+              <input type="number" id="daily-bp-evening-dia" placeholder="下 (84)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-center font-bold focus:ring-2 focus:ring-red-400 focus:outline-none">
+              <input type="number" id="daily-bp-evening-pulse" placeholder="脈拍" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-center text-slate-600 focus:ring-2 focus:ring-red-400 focus:outline-none">
+            </div>
+          </div>
         </div>
-        <div>
-          <label class="text-xs font-medium text-slate-600 block mb-1">服薬・インスリン記録</label>
-          <input type="text" id="daily-meds" placeholder="例: 朝食後処方薬1錠" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="text-xs font-medium text-slate-600 block mb-1">歩数・運動・体調メモ</label>
-          <input type="text" id="daily-memo" placeholder="例: 6,000歩、食後散歩" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+
+        <!-- 体重・服薬・体調 -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs font-medium text-slate-600 block mb-1">今朝の体重 (kg)</label>
+            <input type="number" step="0.1" id="daily-weight" placeholder="例: 65.2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-600 block mb-1">服薬・インスリン記録</label>
+            <input type="text" id="daily-meds" placeholder="例: 朝食後処方薬1錠" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-600 block mb-1">歩数・運動・体調メモ</label>
+            <input type="text" id="daily-memo" placeholder="例: 6,000歩、体調良好" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
         </div>
       </div>
     </details>
@@ -182,25 +219,52 @@
 
     <div id="print-area" class="hidden p-6 bg-white">
       <div class="text-center mb-4">
-        <h1 class="text-xl font-bold text-slate-900">糖尿病食事・血糖管理記録シート</h1>
+        <h1 class="text-xl font-bold text-slate-900">糖尿病食事・血糖・血圧管理記録シート</h1>
         <p class="text-xs text-slate-500 mt-1" id="print-period-label">記録期間：--</p>
       </div>
-      <table class="w-full border-collapse border border-slate-400 text-xs">
-        <thead>
-          <tr class="bg-slate-100">
-            <th class="border border-slate-400 p-2 text-center w-20">日付/時間</th>
-            <th class="border border-slate-400 p-2 text-center w-14">区分</th>
-            <th class="border border-slate-400 p-2 text-left">食事内容・主食の工夫</th>
-            <th class="border border-slate-400 p-2 text-center w-16">推定糖質</th>
-            <th class="border border-slate-400 p-2 text-center w-16">推定熱量</th>
-            <th class="border border-slate-400 p-2 text-center w-28">リブレ血糖値</th>
-            <th class="border border-slate-400 p-2 text-left w-36">体重/服薬/体調</th>
-          </tr>
-        </thead>
-        <tbody id="print-table-body">
-          <!-- JSで印刷行を動的に挿入 -->
-        </tbody>
-      </table>
+
+      <!-- 病院提出用 日別血圧・バイタル一覧表 -->
+      <div class="mb-4">
+        <h3 class="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
+          <i class="fa-solid fa-heart-pulse text-red-600"></i> 【日別 家庭血圧＆バイタル記録】
+        </h3>
+        <table class="w-full border-collapse border border-slate-400 text-[11px]">
+          <thead>
+            <tr class="bg-slate-100">
+              <th class="border border-slate-400 p-1.5 text-center w-24">日付</th>
+              <th class="border border-slate-400 p-1.5 text-center w-36">朝の血圧 (上/下/脈)</th>
+              <th class="border border-slate-400 p-1.5 text-center w-36">晩の血圧 (上/下/脈)</th>
+              <th class="border border-slate-400 p-1.5 text-center w-20">体重</th>
+              <th class="border border-slate-400 p-1.5 text-left">服薬・体調メモ</th>
+            </tr>
+          </thead>
+          <tbody id="print-vitals-body">
+            <!-- JSで動的挿入 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 食事・リブレ血糖記録表 -->
+      <div>
+        <h3 class="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
+          <i class="fa-solid fa-utensils text-emerald-600"></i> 【食事内容・リブレ血糖値・糖質量】
+        </h3>
+        <table class="w-full border-collapse border border-slate-400 text-xs">
+          <thead>
+            <tr class="bg-slate-100">
+              <th class="border border-slate-400 p-2 text-center w-20">日付/時間</th>
+              <th class="border border-slate-400 p-2 text-center w-14">区分</th>
+              <th class="border border-slate-400 p-2 text-left">食事内容・主食の工夫</th>
+              <th class="border border-slate-400 p-2 text-center w-16">推定糖質</th>
+              <th class="border border-slate-400 p-2 text-center w-16">推定熱量</th>
+              <th class="border border-slate-400 p-2 text-center w-28">リブレ血糖値</th>
+            </tr>
+          </thead>
+          <tbody id="print-table-body">
+            <!-- JSで印刷行を動的に挿入 -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -264,7 +328,7 @@
         </button>
       </div>
 
-      <!-- モーダル本文（スクロール可能） -->
+      <!-- モーダル本文 -->
       <div class="p-5 space-y-4 overflow-y-auto flex-1">
         <input type="hidden" id="editing-meal-id">
 
@@ -297,6 +361,7 @@
           </div>
         </div>
 
+        <!-- 食後血糖値セクション -->
         <div class="p-3 bg-rose-50/50 rounded-2xl border border-rose-100">
           <div class="flex items-center justify-between mb-1.5">
             <label class="text-xs font-bold text-rose-900 flex items-center gap-1.5">
@@ -313,9 +378,10 @@
               <i class="fa-solid fa-rotate-left"></i>
             </button>
           </div>
-          <p class="text-[10px] text-rose-600/80 mt-1">※食事が終わった直後は空欄でOK。後からカード上のボタンから1タップで記録できます。</p>
+          <p class="text-[10px] text-rose-600/80 mt-1">※食事直後は空欄で保存し、後からカードのボタンから1タップで記録できます。</p>
         </div>
 
+        <!-- 食べたもの入力欄と音声入力 -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="text-xs font-semibold text-slate-600">食べたもの (品目・分量)</label>
@@ -324,7 +390,7 @@
               <span id="voice-btn-text">音声で入力</span>
             </button>
           </div>
-          <textarea id="input-meal-content" rows="3" placeholder="例: 玄米小盛り（約100g）、焼き鮭、具だくさん味噌汁、ほうれん草おひたし" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed"></textarea>
+          <textarea id="input-meal-content" rows="3" placeholder="例: かつ丼、味噌汁、サラダ" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed"></textarea>
 
           <!-- 過去に食べたものの自動記憶チップ -->
           <div id="history-chips-container" class="mt-2 hidden">
@@ -337,7 +403,7 @@
           </div>
         </div>
 
-        <!-- AI自動計算ボタン -->
+        <!-- 自動計算ボタン -->
         <div class="bg-violet-50/70 p-3 rounded-2xl border border-violet-100 flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-violet-900 flex items-center gap-1.5">
@@ -345,7 +411,7 @@
             </span>
             <button type="button" id="btn-ai-estimate" class="text-xs font-bold px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5 active:scale-95">
               <i class="fa-solid fa-calculator"></i>
-              <span id="ai-btn-text">AIで糖質・カロリーを自動計算</span>
+              <span id="ai-btn-text">糖質・カロリーを自動計算</span>
             </button>
           </div>
           <div id="ai-status-msg" class="text-[11px] text-violet-700 leading-tight">
@@ -353,6 +419,7 @@
           </div>
         </div>
 
+        <!-- 糖質・カロリー数値 -->
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-xs font-semibold text-violet-900 mb-1 block">推定糖質量 (g)</label>
@@ -419,12 +486,12 @@
           <button type="button" id="btn-export-csv" class="p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 flex flex-col items-center justify-center text-center gap-1.5 transition">
             <i class="fa-solid fa-file-excel text-emerald-600 text-xl"></i>
             <span class="text-xs font-bold text-slate-800">Excel (CSV) 出力</span>
-            <span class="text-[10px] text-slate-400">文字化けなしUTF-8</span>
+            <span class="text-[10px] text-slate-400">血圧・糖質対応 (UTF-8)</span>
           </button>
           <button type="button" id="btn-print-preview" class="p-3.5 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 flex flex-col items-center justify-center text-center gap-1.5 transition">
             <i class="fa-solid fa-print text-indigo-600 text-xl"></i>
             <span class="text-xs font-bold text-slate-800">A4印刷 / PDF保存</span>
-            <span class="text-[10px] text-slate-400">医師・栄養士用レイアウト</span>
+            <span class="text-[10px] text-slate-400">医師提出用レイアウト</span>
           </button>
         </div>
 
@@ -436,6 +503,54 @@
     </div>
   </div>
 
+  <div id="sync-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl w-full max-w-md p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-arrows-rotate text-emerald-600"></i> 端末間データ引継ぎ
+        </h3>
+        <button id="btn-close-sync" class="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-500 leading-relaxed">
+        スマホで記録した全データ（食事・血糖値・血圧・体重）をファイルにして、タブレットに簡単に移すことができます。
+      </p>
+
+      <div class="space-y-2.5">
+        <!-- バックアップ保存（スマホ側） -->
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">1</span>
+              スマホ側でバックアップ
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2">全データを保存ファイルとしてダウンロードします。保存後、LINEやメールでタブレットに送ってください。</p>
+          <button type="button" id="btn-download-backup" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-download"></i> バックアップファイルを保存
+          </button>
+        </div>
+
+        <!-- 復元読み込み（タブレット側） -->
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold">2</span>
+              タブレット側で復元読み込み
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2">届いたバックアップファイルを選択すると、タブレット上に全データが復元されます。</p>
+          <label class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
+            <i class="fa-solid fa-upload"></i> バックアップファイルを選択して復元
+            <input type="file" id="file-import-backup" accept=".json" class="hidden">
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- トースト通知 -->
   <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg pointer-events-none transition-opacity opacity-0 flex items-center gap-2">
     <i class="fa-solid fa-check text-emerald-400"></i>
@@ -443,14 +558,12 @@
   </div>
 
   <script>
-    /* アプリケーションの状態管理 */
     const STORAGE_KEY_MEALS = 'diabetic_meal_tracker_records_v2';
     const STORAGE_KEY_DAILY = 'diabetic_meal_tracker_daily_v2';
     const STORAGE_KEY_MEMORY = 'diabetic_meal_tracker_memory_v2';
 
-    // オフライン・即時判定用の主要料理栄養データベース（糖尿病管理に特化した糖質・カロリー基準値）
+    // 定番料理の糖質・カロリーデータベース（通信環境に依存せず即座に機能）
     const COMMON_FOOD_DB = [
-      // 丼もの・ご飯もの
       { keywords: ['かつ丼', 'カツ丼', 'ロースかつ丼', 'ヒレカツ丼'], carbs: 115.0, calories: 920, carb: 'カツ衣・甘辛タレ・白米に糖質多め', name: 'かつ丼' },
       { keywords: ['牛丼', '牛めし'], carbs: 98.0, calories: 730, carb: '甘辛タレ・ご飯多め', name: '牛丼' },
       { keywords: ['親子丼'], carbs: 95.0, calories: 650, carb: 'みりん・砂糖タレ・ご飯多め', name: '親子丼' },
@@ -459,25 +572,19 @@
       { keywords: ['カレーライス', 'カレー', 'カツカレー'], carbs: 120.0, calories: 850, carb: 'ルウの小麦粉と白米で高糖質', name: 'カレーライス' },
       { keywords: ['炒飯', 'チャーハン', '焼き飯'], carbs: 90.0, calories: 720, carb: 'ご飯しっかり1人前', name: 'チャーハン' },
       { keywords: ['オムライス'], carbs: 92.0, calories: 760, carb: 'ケチャップライス・ケチャップ糖質', name: 'オムライス' },
-      { keywords: ['中華丼'], carbs: 88.0, calories: 630, carb: '具沢山だが餡の片栗粉とご飯に糖質', name: '中華丼' },
+      { keywords: ['中華丼'], carbs: 88.0, calories: 630, carb: '餡の片栗粉とご飯に糖質', name: '中華丼' },
       { keywords: ['うな丼', 'うな重', '鰻'], carbs: 95.0, calories: 750, carb: '甘だれ・ご飯多め', name: 'うな丼' },
-
-      // 主食単体
       { keywords: ['白米', 'ご飯', 'ごはん', 'お米'], carbs: 55.0, calories: 240, carb: 'ご飯1膳（約150g）', name: 'ご飯（1膳）' },
       { keywords: ['玄米', '麦飯', '雑穀米'], carbs: 48.0, calories: 230, carb: '食物繊維豊富・低GI', name: '玄米・雑穀米（1膳）' },
       { keywords: ['おにぎり', 'おむすび'], carbs: 39.0, calories: 175, carb: 'おにぎり1個', name: 'おにぎり（1個）' },
       { keywords: ['食パン', 'トースト'], carbs: 28.0, calories: 160, carb: '6枚切り1枚', name: '食パン（1枚）' },
       { keywords: ['クロワッサン'], carbs: 19.0, calories: 180, carb: '脂質高め・糖質はやや控えめ', name: 'クロワッサン' },
-
-      // 麺類
       { keywords: ['ラーメン', 'らーめん', '醤油ラーメン', '味噌ラーメン', '豚骨ラーメン'], carbs: 68.0, calories: 550, carb: '中華麺1玉に糖質集中', name: 'ラーメン' },
       { keywords: ['つけ麺'], carbs: 85.0, calories: 750, carb: '麺量多め・濃厚スープ', name: 'つけ麺' },
       { keywords: ['うどん', 'かけうどん', '讃岐うどん'], carbs: 58.0, calories: 340, carb: 'うどん麺は消化吸収が早い', name: 'かけうどん' },
       { keywords: ['ざる蕎麦', '蕎麦', 'そば', 'かけそば'], carbs: 52.0, calories: 350, carb: 'ルチン含有・うどんより低GI', name: 'そば' },
       { keywords: ['パスタ', 'スパゲティ', 'ナポリタン', 'ミートソース', 'カルボナーラ'], carbs: 75.0, calories: 650, carb: 'デュラム小麦パスタ1人前', name: 'パスタ' },
       { keywords: ['焼きそば', 'ソース焼きそば'], carbs: 65.0, calories: 520, carb: '中華麺と濃厚ソース', name: '焼きそば' },
-
-      // 定食・主菜
       { keywords: ['唐揚げ', 'から揚げ', 'からあげ'], carbs: 16.0, calories: 380, carb: '衣の片栗粉・小麦粉', name: '鶏の唐揚げ' },
       { keywords: ['生姜焼き', '豚の生姜焼き'], carbs: 12.0, calories: 390, carb: 'タレの砂糖・みりん', name: '豚の生姜焼き' },
       { keywords: ['ハンバーグ'], carbs: 15.0, calories: 420, carb: 'つなぎのパン粉とソース', name: 'ハンバーグ' },
@@ -487,8 +594,6 @@
       { keywords: ['麻婆豆腐'], carbs: 10.0, calories: 320, carb: '豆板醤・とろみ付け片栗粉', name: '麻婆豆腐' },
       { keywords: ['ステーキ'], carbs: 2.0, calories: 480, carb: '肉単体は低糖質・タレに注意', name: '牛ステーキ' },
       { keywords: ['豚カツ', 'とんかつ', 'ロースカツ'], carbs: 22.0, calories: 550, carb: 'パン粉衣とソースに糖質', name: 'とんかつ' },
-
-      // 副菜・小鉢・汁物
       { keywords: ['サラダ', '生野菜', 'グリーンサラダ'], carbs: 4.5, calories: 45, carb: '食物繊維・ベジファースト推奨', name: '野菜サラダ' },
       { keywords: ['味噌汁', 'みそ汁'], carbs: 4.0, calories: 45, carb: '具材による（海藻・豆腐推奨）', name: '味噌汁' },
       { keywords: ['納豆'], carbs: 3.5, calories: 90, carb: '食物繊維・低糖質発酵食品', name: '納豆（1パック）' },
@@ -498,15 +603,12 @@
       { keywords: ['卵焼き', '目玉焼き', 'ゆで卵'], carbs: 1.0, calories: 95, carb: '超低糖質（甘い卵焼きは+3g）', name: '卵料理' }
     ];
 
-    // 入力文から内蔵データベースを賢くマッチングする関数
     function findLocalFoodMatch(text) {
       if (!text) return null;
-      const lower = text.toLowerCase().replace(/\s+/g, '');
-      
-      // 完全または主要キーワードによる走査
+      const clean = text.toLowerCase().replace(/\s+/g, '');
       for (const item of COMMON_FOOD_DB) {
         for (const kw of item.keywords) {
-          if (lower.includes(kw.toLowerCase())) {
+          if (clean.includes(kw.toLowerCase())) {
             return item;
           }
         }
@@ -517,13 +619,12 @@
     let selectedDate = getTodayString();
     let allMeals = [];
     let dailyRecords = {};
-    let mealMemory = []; // 過去に入力した料理の履歴辞書
+    let mealMemory = [];
     let currentMealType = '朝食';
     let recognition = null;
     let isListening = false;
     let quickBsTargetMealId = null;
 
-    // 日付操作ユーティリティ
     function getTodayString() {
       const d = new Date();
       const year = d.getFullYear();
@@ -534,7 +635,7 @@
 
     function formatDateDisplay(dateStr) {
       const parts = dateStr.split('-');
-      if (parts.length !== 3) return dateStr;
+      if (parts.length !== 3) return { text: dateStr, dayName: '', isWeekend: false };
       const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       const days = ['日', '月', '火', '水', '木', '金', '土'];
       return {
@@ -611,6 +712,12 @@
         }
       ];
       dailyRecords[today] = {
+        bpMorningSys: '124',
+        bpMorningDia: '81',
+        bpMorningPulse: '72',
+        bpEveningSys: '126',
+        bpEveningDia: '83',
+        bpEveningPulse: '68',
         weight: '64.8',
         meds: '朝食後処方薬1錠',
         memo: '食後20分ウォーキング実施'
@@ -618,7 +725,7 @@
       mealMemory = [
         { content: '玄米（小盛り約100g）、納豆、焼き鮭、味噌汁', carbs: 45.2, calories: 420, carb: '玄米小盛り' },
         { content: '蒸し鶏のたっぷりサラダ、全粒粉パン1枚、ゆで卵', carbs: 32.0, calories: 480, carb: '全粒粉' },
-        { content: 'ざる蕎麦（一人前）、温泉卵、冷奴', carbs: 55.0, calories: 450, carb: '蕎麦' }
+        { content: 'かつ丼', carbs: 115.0, calories: 920, carb: 'カツ衣・甘辛タレ・白米に糖質多め' }
       ];
       saveData(STORAGE_KEY_MEALS, allMeals);
       saveData(STORAGE_KEY_DAILY, dailyRecords);
@@ -634,14 +741,19 @@
     const statMealCount = document.getElementById('stat-meal-count');
     const statTotalCarbs = document.getElementById('stat-total-carbs');
     const statMaxBs = document.getElementById('stat-max-bs');
-    const statWeight = document.getElementById('stat-weight');
+    const statBp = document.getElementById('stat-bp');
 
+    const dailyBpMorningSys = document.getElementById('daily-bp-morning-sys');
+    const dailyBpMorningDia = document.getElementById('daily-bp-morning-dia');
+    const dailyBpMorningPulse = document.getElementById('daily-bp-morning-pulse');
+    const dailyBpEveningSys = document.getElementById('daily-bp-evening-sys');
+    const dailyBpEveningDia = document.getElementById('daily-bp-evening-dia');
+    const dailyBpEveningPulse = document.getElementById('daily-bp-evening-pulse');
     const dailyWeight = document.getElementById('daily-weight');
     const dailyMeds = document.getElementById('daily-meds');
     const dailyMemo = document.getElementById('daily-memo');
     const mealsContainer = document.getElementById('meals-container');
 
-    // モーダル要素
     const mealModal = document.getElementById('meal-modal');
     const modalTitle = document.getElementById('modal-title');
     const btnCloseModal = document.getElementById('btn-close-modal');
@@ -669,7 +781,6 @@
     const historyChipsContainer = document.getElementById('history-chips-container');
     const historyChipsList = document.getElementById('history-chips-list');
 
-    // クイック食後血糖ダイアログ
     const quickPostBsDialog = document.getElementById('quick-post-bs-dialog');
     const quickBsMealTitle = document.getElementById('quick-bs-meal-title');
     const quickPostBsInput = document.getElementById('quick-post-bs-input');
@@ -677,7 +788,6 @@
     const btnCancelQuickBs = document.getElementById('btn-cancel-quick-bs');
     const btnSaveQuickBs = document.getElementById('btn-save-quick-bs');
 
-    // 出力モーダル
     const btnOpenExport = document.getElementById('btn-open-export');
     const exportModal = document.getElementById('export-modal');
     const btnCloseExport = document.getElementById('btn-close-export');
@@ -685,6 +795,12 @@
     const btnExportCsv = document.getElementById('btn-export-csv');
     const btnPrintPreview = document.getElementById('btn-print-preview');
     const btnCopyClipboard = document.getElementById('btn-copy-clipboard');
+
+    const btnOpenSync = document.getElementById('btn-open-sync');
+    const syncModal = document.getElementById('sync-modal');
+    const btnCloseSync = document.getElementById('btn-close-sync');
+    const btnDownloadBackup = document.getElementById('btn-download-backup');
+    const fileImportBackup = document.getElementById('file-import-backup');
 
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
@@ -710,165 +826,135 @@
 
     function renderDailyHealthFields() {
       const record = dailyRecords[selectedDate] || {};
+      dailyBpMorningSys.value = record.bpMorningSys || '';
+      dailyBpMorningDia.value = record.bpMorningDia || '';
+      dailyBpMorningPulse.value = record.bpMorningPulse || '';
+      dailyBpEveningSys.value = record.bpEveningSys || '';
+      dailyBpEveningDia.value = record.bpEveningDia || '';
+      dailyBpEveningPulse.value = record.bpEveningPulse || '';
       dailyWeight.value = record.weight || '';
       dailyMeds.value = record.meds || '';
       dailyMemo.value = record.memo || '';
     }
 
+    function saveCurrentDailyRecord() {
+      dailyRecords[selectedDate] = {
+        bpMorningSys: dailyBpMorningSys.value.trim(),
+        bpMorningDia: dailyBpMorningDia.value.trim(),
+        bpMorningPulse: dailyBpMorningPulse.value.trim(),
+        bpEveningSys: dailyBpEveningSys.value.trim(),
+        bpEveningDia: dailyBpEveningDia.value.trim(),
+        bpEveningPulse: dailyBpEveningPulse.value.trim(),
+        weight: dailyWeight.value.trim(),
+        meds: dailyMeds.value.trim(),
+        memo: dailyMemo.value.trim()
+      };
+      saveData(STORAGE_KEY_DAILY, dailyRecords);
+      updateStats();
+    }
+
+    [
+      dailyBpMorningSys, dailyBpMorningDia, dailyBpMorningPulse,
+      dailyBpEveningSys, dailyBpEveningDia, dailyBpEveningPulse,
+      dailyWeight, dailyMeds, dailyMemo
+    ].forEach(input => {
+      input.addEventListener('change', saveCurrentDailyRecord);
+      input.addEventListener('blur', saveCurrentDailyRecord);
+    });
+
     function renderMealsList() {
       mealsContainer.innerHTML = '';
       const daysMeals = allMeals.filter(m => m.date === selectedDate);
 
-      // 時間順にソート
-      daysMeals.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-
       if (daysMeals.length === 0) {
         mealsContainer.innerHTML = `
-          <div class="bg-white rounded-2xl p-8 text-center border border-dashed border-slate-300">
-            <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 mb-2">
+          <div class="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200 p-6">
+            <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
               <i class="fa-solid fa-utensils text-lg"></i>
             </div>
-            <p class="text-sm font-semibold text-slate-700">まだこの日の食事がありません</p>
-            <p class="text-xs text-slate-400 mt-1">画面下の「食事を記録する」から追加してください</p>
+            <p class="text-sm font-semibold text-slate-700">まだこの日の記録がありません</p>
+            <p class="text-xs text-slate-400 mt-1">「食事を記録する」ボタンから記録をはじめましょう</p>
           </div>
         `;
         return;
       }
 
+      daysMeals.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
       daysMeals.forEach(meal => {
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs hover:border-emerald-300 hover:shadow-md transition cursor-pointer relative group';
+        card.className = 'bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs hover:border-emerald-300 transition cursor-pointer relative';
 
-        let typeColor = 'bg-amber-500';
-        let typeIcon = 'fa-utensils';
-        if (meal.type === '朝食') { typeColor = 'bg-amber-500'; typeIcon = 'fa-mug-saucer'; }
-        else if (meal.type === '昼食') { typeColor = 'bg-orange-500'; typeIcon = 'fa-sun'; }
-        else if (meal.type === '夕食') { typeColor = 'bg-indigo-600'; typeIcon = 'fa-moon'; }
-        else if (meal.type === '間食・夜食') { typeColor = 'bg-pink-500'; typeIcon = 'fa-cookie-bite'; }
+        const pre = meal.preBloodSugar;
+        const post = meal.postBloodSugar;
+        let deltaHtml = '';
 
-        const preBs = meal.preBloodSugar || '';
-        const postBs = meal.postBloodSugar || '';
-
-        // 食後経過時間の計算（当日かつ食後血糖未入力時）
-        let timeElapsedBadge = '';
-        if (meal.date === getTodayString() && meal.time && !postBs) {
-          const [h, m] = meal.time.split(':').map(Number);
-          const now = new Date();
-          const diffMin = (now.getHours() * 60 + now.getMinutes()) - (h * 60 + m);
-          if (diffMin >= 45 && diffMin <= 240) {
-            const diffH = Math.floor(diffMin / 60);
-            const diffM = diffMin % 60;
-            const text = diffH > 0 ? `${diffH}時間${diffM}分経過` : `${diffM}分経過`;
-            timeElapsedBadge = `
-              <span class="inline-flex items-center gap-1 text-[10px] text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-full font-bold animate-pulse">
-                <i class="fa-solid fa-bell text-[9px]"></i> 食後${text}・リブレ測定頃
-              </span>
-            `;
-          }
+        if (pre && post && !isNaN(Number(pre)) && !isNaN(Number(post))) {
+          const diff = Number(post) - Number(pre);
+          const sign = diff >= 0 ? `+${diff}` : `${diff}`;
+          const isHighSpike = diff >= 50;
+          deltaHtml = `<span class="text-[11px] font-bold px-2 py-0.5 rounded-md ${isHighSpike ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">Δ${sign}</span>`;
         }
 
-        // 食前血糖バッジ
-        let preBsBadge = '';
-        if (preBs) {
-          preBsBadge = `
-            <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border border-slate-200 bg-slate-50 text-slate-700">
-              <span class="text-[9px] text-slate-400">食前:</span>
-              <strong class="font-bold">${preBs}</strong>
-            </span>
+        let postBsHtml = '';
+        if (post) {
+          postBsHtml = `
+            <div class="text-right">
+              <span class="text-[10px] text-slate-400 block">食後血糖</span>
+              <span class="text-sm font-bold ${Number(post) >= 180 ? 'text-rose-600' : 'text-slate-800'}">${post} <span class="text-[10px] font-normal text-slate-400">mg/dL</span></span>
+            </div>
           `;
-        }
-
-        // 食後血糖バッジ（またはクイック入力ボタン）
-        let postBsBadge = '';
-        let spikeDiffBadge = '';
-        if (postBs) {
-          const postNum = Number(postBs);
-          let bsColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
-          if (postNum >= 180) {
-            bsColor = 'text-rose-700 bg-rose-50 border-rose-200 font-bold';
-          } else if (postNum >= 140) {
-            bsColor = 'text-amber-700 bg-amber-50 border-amber-200 font-semibold';
-          }
-          postBsBadge = `
-            <span class="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-md border ${bsColor}">
-              <i class="fa-solid fa-droplet text-[9px]"></i>
-              <span class="text-[9px] opacity-75 font-normal">食後:</span>
-              <strong>${postBs}</strong>
-              <span class="text-[8px] opacity-60">mg/dL</span>
-            </span>
-          `;
-
-          // 上昇幅の算出（食前と食後が揃っている場合）
-          if (preBs && !isNaN(Number(preBs))) {
-            const diff = postNum - Number(preBs);
-            const diffColor = diff >= 60 ? 'text-rose-600 bg-rose-50 border-rose-200' : (diff > 0 ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-emerald-600 bg-emerald-50 border-emerald-200');
-            const sign = diff >= 0 ? `+${diff}` : `${diff}`;
-            spikeDiffBadge = `
-              <span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded border ${diffColor} font-bold" title="食前からの上昇幅">
-                Δ ${sign}
-              </span>
-            `;
-          }
         } else {
-          // 食後未入力時のクイックボタン
-          postBsBadge = `
-            <button type="button" data-quick-id="${meal.id}" class="btn-quick-post-bs inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 transition font-bold shadow-xs">
-              <i class="fa-solid fa-clock text-[10px] text-rose-500"></i> 食後血糖を入力
+          postBsHtml = `
+            <button type="button" class="btn-quick-post-bs text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-xl border border-rose-200/80 transition flex items-center gap-1 active:scale-95" data-id="${meal.id}">
+              <i class="fa-solid fa-droplet text-[10px]"></i> 食後血糖を入力
             </button>
           `;
         }
 
-        const carbsBadge = (meal.carbs !== undefined && meal.carbs !== null && meal.carbs !== '') ? `
-          <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-violet-200 bg-violet-50 text-violet-700 font-semibold">
-            <i class="fa-solid fa-wheat-awn text-violet-500 text-[10px]"></i> 糖質: ${meal.carbs}g
-          </span>
-        ` : '';
-
-        const kcalBadge = meal.calories ? `
-          <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
-            <i class="fa-solid fa-fire text-amber-500 text-[10px]"></i> ${meal.calories} kcal
-          </span>
-        ` : '';
-
-        const carbMemoBadge = meal.carb ? `
-          <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
-            <i class="fa-solid fa-tag text-emerald-500 text-[10px]"></i> ${escapeHtml(meal.carb)}
-          </span>
-        ` : '';
+        let badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        if (meal.type === '昼食') badgeColor = 'bg-amber-50 text-amber-700 border-amber-200';
+        if (meal.type === '夕食') badgeColor = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        if (meal.type === '間食・夜食') badgeColor = 'bg-purple-50 text-purple-700 border-purple-200';
 
         card.innerHTML = `
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex items-center gap-2.5">
-              <span class="w-8 h-8 rounded-xl ${typeColor} text-white flex items-center justify-center text-xs shadow-xs">
-                <i class="fa-solid ${typeIcon}"></i>
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-lg border ${badgeColor}">${escapeHtml(meal.type)}</span>
+              <span class="text-xs text-slate-500 font-medium">${escapeHtml(meal.time || '--:--')}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              ${deltaHtml}
+              ${pre ? `
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-400 block">食前</span>
+                  <span class="text-xs font-semibold text-slate-700">${escapeHtml(pre)}</span>
+                </div>
+              ` : ''}
+              ${postBsHtml}
+            </div>
+          </div>
+
+          <div class="py-2">
+            <p class="text-sm font-medium text-slate-800 leading-relaxed">${escapeHtml(meal.content)}</p>
+            ${meal.carb ? `<p class="text-xs text-slate-500 mt-1 flex items-center gap-1"><i class="fa-solid fa-note-sticky text-[10px] text-slate-400"></i> ${escapeHtml(meal.carb)}</p>` : ''}
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-violet-700 flex items-center gap-1">
+                <i class="fa-solid fa-wheat-awn text-[10px]"></i> 糖質 ${meal.carbs !== undefined && meal.carbs !== null && meal.carbs !== '' ? meal.carbs + 'g' : '-'}
               </span>
-              <div>
-                <span class="font-bold text-slate-800 text-sm">${meal.type}</span>
-                <span class="text-xs text-slate-400 ml-1.5">${meal.time || '時間未設定'}</span>
-                ${timeElapsedBadge ? `<div class="mt-0.5">${timeElapsedBadge}</div>` : ''}
-              </div>
+              <span class="text-slate-500">
+                ${meal.calories ? meal.calories + ' kcal' : ''}
+              </span>
             </div>
-            <div class="flex flex-wrap items-center justify-end gap-1.5">
-              ${preBsBadge}
-              ${postBsBadge}
-              ${spikeDiffBadge}
-            </div>
+            <span class="text-[11px] text-emerald-600 font-medium hover:underline flex items-center gap-1">
+              編集 <i class="fa-solid fa-chevron-right text-[9px]"></i>
+            </span>
           </div>
-
-          <div class="mt-2.5 text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line pl-10">
-            ${escapeHtml(meal.content)}
-          </div>
-
-          ${(carbsBadge || kcalBadge || carbMemoBadge) ? `
-            <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-1.5 pl-10">
-              ${carbsBadge}
-              ${kcalBadge}
-              ${carbMemoBadge}
-            </div>
-          ` : ''}
         `;
 
-        // クイック食後血糖ボタン押下時はカード本体のクリック（モーダルオープン）を抑制
         const quickBtn = card.querySelector('.btn-quick-post-bs');
         if (quickBtn) {
           quickBtn.addEventListener('click', (e) => {
@@ -886,7 +972,6 @@
       const daysMeals = allMeals.filter(m => m.date === selectedDate);
       statMealCount.textContent = daysMeals.length;
 
-      // 最高血糖値
       const bsValues = [];
       daysMeals.forEach(m => {
         if (m.preBloodSugar && !isNaN(Number(m.preBloodSugar))) bsValues.push(Number(m.preBloodSugar));
@@ -894,13 +979,17 @@
       });
       statMaxBs.textContent = bsValues.length > 0 ? Math.max(...bsValues) : '-';
 
-      // 推定総糖質
       const totalCarbs = daysMeals.reduce((acc, m) => acc + (Number(m.carbs) || 0), 0);
       statTotalCarbs.textContent = totalCarbs > 0 ? (Math.round(totalCarbs * 10) / 10) : '0';
 
-      // 体重
-      const daily = dailyRecords[selectedDate];
-      statWeight.textContent = (daily && daily.weight) ? daily.weight : '-';
+      const daily = dailyRecords[selectedDate] || {};
+      let bpText = '-';
+      if (daily.bpMorningSys && daily.bpMorningDia) {
+        bpText = `朝 ${daily.bpMorningSys}/${daily.bpMorningDia}`;
+      } else if (daily.bpEveningSys && daily.bpEveningDia) {
+        bpText = `晩 ${daily.bpEveningSys}/${daily.bpEveningDia}`;
+      }
+      statBp.textContent = bpText;
     }
 
     function renderApp() {
@@ -933,20 +1022,6 @@
       selectedDate = getTodayString();
       renderApp();
     });
-
-    function saveCurrentDailyRecord() {
-      dailyRecords[selectedDate] = {
-        weight: dailyWeight.value.trim(),
-        meds: dailyMeds.value.trim(),
-        memo: dailyMemo.value.trim()
-      };
-      saveData(STORAGE_KEY_DAILY, dailyRecords);
-      updateStats();
-    }
-
-    dailyWeight.addEventListener('change', saveCurrentDailyRecord);
-    dailyMeds.addEventListener('change', saveCurrentDailyRecord);
-    dailyMemo.addEventListener('change', saveCurrentDailyRecord);
 
     function openQuickPostBsDialog(meal) {
       quickBsTargetMealId = meal.id;
@@ -1032,7 +1107,6 @@
       inputMealCarb.value = '';
       aiStatusMsg.textContent = '料理名を入力してボタンを押すと、推定糖質(g)とカロリー(kcal)を自動算出します。';
 
-      // 現在時刻と時間帯判定
       const now = new Date();
       const hh = String(now.getHours()).padStart(2, '0');
       const mm = String(now.getMinutes()).padStart(2, '0');
@@ -1079,7 +1153,6 @@
       }
 
       historyChipsList.innerHTML = '';
-      // 直近の履歴から最大6件表示
       const recent = mealMemory.slice(-6).reverse();
 
       recent.forEach(item => {
@@ -1091,8 +1164,8 @@
 
         chip.addEventListener('click', () => {
           inputMealContent.value = item.content;
-          if (item.carbs) inputMealCarbsNum.value = item.carbs;
-          if (item.calories) inputMealCalories.value = item.calories;
+          if (item.carbs !== undefined) inputMealCarbsNum.value = item.carbs;
+          if (item.calories !== undefined) inputMealCalories.value = item.calories;
           if (item.carb) inputMealCarb.value = item.carb;
           showToast('過去の記録から呼び出しました');
         });
@@ -1104,7 +1177,7 @@
     }
 
     function rememberMeal(content, carbs, calories, carb) {
-      if (!content || content.length < 3) return;
+      if (!content || content.length < 2) return;
       const cleanContent = content.trim();
       const existingIdx = mealMemory.findIndex(m => m.content === cleanContent);
       const newEntry = {
@@ -1212,6 +1285,19 @@
       recognition.onend = () => {
         stopSpeech();
       };
+
+      btnVoiceInput.addEventListener('click', () => {
+        if (!recognition) return;
+        if (isListening) {
+          recognition.stop();
+        } else {
+          try {
+            recognition.start();
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      });
     }
 
     function stopSpeech() {
@@ -1221,7 +1307,7 @@
       btnVoiceInput.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
     }
 
-    async function estimateNutritionWithAI() {
+    function estimateNutritionWithAI() {
       const text = inputMealContent.value.trim();
       if (!text) {
         showToast('料理名を入力してから押してください');
@@ -1231,99 +1317,65 @@
 
       btnAiEstimate.disabled = true;
       aiBtnText.textContent = '計算中...';
-      aiStatusMsg.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 栄養データベースとAIを照会しています...';
 
-      // 1. まず手元の定番料理データベースを照会（確実に高速マッチ）
-      const localMatch = findLocalFoodMatch(text);
-      let matchedLocally = false;
-      if (localMatch) {
-        // 内蔵DBにヒットした場合、即座に安全なデフォルト値としてセット
-        inputMealCarbsNum.value = localMatch.carbs;
-        inputMealCalories.value = localMatch.calories;
+      const match = findLocalFoodMatch(text);
+      if (match) {
+        inputMealCarbsNum.value = match.carbs;
+        inputMealCalories.value = match.calories;
         if (!inputMealCarb.value) {
-          inputMealCarb.value = localMatch.carb;
+          inputMealCarb.value = match.carb;
         }
-        matchedLocally = true;
+        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 「${match.name}」の推定値（糖質 ${match.carbs}g / ${match.calories}kcal）を適用しました。`;
+      } else {
+        // 未登録料理用の一般的基準推計
+        let estCarbs = 40.0;
+        let estCal = 450;
+        let memo = '一般的な主食・おかずの目安';
+
+        if (/定食|御膳/.test(text)) {
+          estCarbs = 65.0;
+          estCal = 650;
+          memo = 'ご飯・小鉢付き定食の目安';
+        } else if (/丼|重/.test(text)) {
+          estCarbs = 95.0;
+          estCal = 750;
+          memo = 'ご飯多め・タレの糖質注意';
+        } else if (/麺|ラーメン|パスタ|うどん|そば/.test(text)) {
+          estCarbs = 65.0;
+          estCal = 550;
+          memo = '麺1人前分の糖質目安';
+        }
+
+        inputMealCarbsNum.value = estCarbs;
+        inputMealCalories.value = estCal;
+        if (!inputMealCarb.value) inputMealCarb.value = memo;
+        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 推定値（糖質 ${estCarbs}g / ${estCal}kcal）を算出しました。`;
       }
 
-      // 2. クラウドAI（Gemini）で詳細な分量や複合メニューの推計を試行
-      const systemPrompt = `あなたは糖尿病専門の管理栄養士です。
-ユーザーが食べた食事内容から、全体の「推定糖質量(g)」と「推定総エネルギー(kcal)」および「主食・糖質の工夫に関する一言メモ」を算出してJSONで返してください。
-例えば「かつ丼」であれば糖質約110〜120g、カロリー約900kcal前後になります。一般的な成人1食分として糖尿病管理に適した現実的な数値を算出してください。`;
-
-      const userPrompt = `食事内容: 「${text}」`;
-
-      const apiKey = "";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-      const payload = {
-        contents: [{ parts: [{ text: userPrompt }] }],
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              carbs: { type: "NUMBER", description: "全体の推定糖質量 (グラム)" },
-              calories: { type: "INTEGER", description: "全体の推定カロリー (kcal)" },
-              carbSummary: { type: "STRING", description: "主食や糖質の工夫メモ（例: 玄米小盛り、野菜中心）" }
-            },
-            required: ["carbs", "calories", "carbSummary"]
-          }
-        }
-      };
-
-      try {
-        let response = null;
-        let delay = 800;
-        for (let i = 0; i < 2; i++) {
-          try {
-            response = await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            if (response && response.ok) break;
-          } catch (netErr) {
-            // retry
-          }
-          await new Promise(r => setTimeout(r, delay));
-          delay *= 1.5;
-        }
-
-        if (response && response.ok) {
-          const data = await response.json();
-          const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (jsonText) {
-            const parsed = JSON.parse(jsonText);
-            inputMealCarbsNum.value = parsed.carbs !== undefined ? parsed.carbs : (localMatch ? localMatch.carbs : '');
-            inputMealCalories.value = parsed.calories !== undefined ? parsed.calories : (localMatch ? localMatch.calories : '');
-            if (parsed.carbSummary) {
-              inputMealCarb.value = parsed.carbSummary;
-            }
-            aiStatusMsg.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> AI推計完了:</span> 糖質 約${inputMealCarbsNum.value}g / 約${inputMealCalories.value}kcal`;
-            showToast('糖質・カロリーを自動計算しました！');
-            return;
-          }
-        }
-        throw new Error('AI通信応答なし');
-      } catch (err) {
-        console.warn('AI offline or error, checking fallback:', err);
-        // AI通信が失敗しても、内蔵データベースでヒットしていれば完璧に対応
-        if (matchedLocally) {
-          aiStatusMsg.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> 【${localMatch.name}】標準データより算出:</span> 糖質 約${localMatch.carbs}g / 約${localMatch.calories}kcal`;
-          showToast(`「${localMatch.name}」の栄養値を自動入力しました！`);
-        } else {
-          // 内蔵DBにもない珍しいメニューかつオフラインの場合
-          aiStatusMsg.innerHTML = `<span class="text-amber-700">通信状態が不安定です。数値を手動でご入力ください。</span>`;
-        }
-      } finally {
-        btnAiEstimate.disabled = false;
-        aiBtnText.textContent = 'AIで糖質・カロリーを自動計算';
-      }
+      btnAiEstimate.disabled = false;
+      aiBtnText.textContent = '糖質・カロリーを自動計算';
+      showToast('糖質・カロリーを自動入力しました');
     }
 
     btnAiEstimate.addEventListener('click', estimateNutritionWithAI);
+
+    function getFilteredMealsForExport() {
+      const range = exportRange.value;
+      let meals = [...allMeals];
+      meals.sort((a, b) => {
+        const dComp = a.date.localeCompare(b.date);
+        return dComp !== 0 ? dComp : (a.time || '').localeCompare(b.time || '');
+      });
+
+      if (range === 'all') return meals;
+
+      const days = parseInt(range, 10);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+
+      return meals.filter(m => m.date >= cutoffStr);
+    }
 
     btnOpenExport.addEventListener('click', () => {
       exportModal.classList.remove('hidden');
@@ -1333,24 +1385,6 @@
       exportModal.classList.add('hidden');
     });
 
-    function getFilteredMealsForExport() {
-      const rangeVal = exportRange.value;
-      if (rangeVal === 'all') {
-        return [...allMeals].sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
-      }
-
-      const daysCount = parseInt(rangeVal, 10);
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() - daysCount);
-
-      return allMeals.filter(m => {
-        const parts = m.date.split('-').map(Number);
-        const mDate = new Date(parts[0], parts[1] - 1, parts[2]);
-        return mDate >= targetDate;
-      }).sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
-    }
-
-    // Excel対応 CSV出力 (UTF-8 BOM付き)
     btnExportCsv.addEventListener('click', () => {
       const filtered = getFilteredMealsForExport();
       if (filtered.length === 0) {
@@ -1358,8 +1392,8 @@
         return;
       }
 
-      let csv = '\uFEFF'; // BOM
-      csv += '日付,時間,区分,食事内容,食前血糖(mg/dL),食後血糖(mg/dL),血糖上昇幅(Δ),推定糖質(g),推定カロリー(kcal),主食工夫メモ,体重(kg),服薬,体調メモ\r\n';
+      let csv = '\uFEFF';
+      csv += '日付,時間,区分,食事内容,食前血糖(mg/dL),食後血糖(mg/dL),血糖上昇幅(Δ),推定糖質(g),推定熱量(kcal),主食工夫メモ,朝血圧(上),朝血圧(下),朝脈拍,晩血圧(上),晩血圧(下),晩脈拍,体重(kg),服薬,体調メモ\r\n';
 
       filtered.forEach(m => {
         const daily = dailyRecords[m.date] || {};
@@ -1382,6 +1416,12 @@
           `"${m.carbs !== undefined && m.carbs !== null ? m.carbs : ''}"`,
           `"${m.calories || ''}"`,
           `"${(m.carb || '').replace(/"/g, '""')}"`,
+          `"${daily.bpMorningSys || ''}"`,
+          `"${daily.bpMorningDia || ''}"`,
+          `"${daily.bpMorningPulse || ''}"`,
+          `"${daily.bpEveningSys || ''}"`,
+          `"${daily.bpEveningDia || ''}"`,
+          `"${daily.bpEveningPulse || ''}"`,
           `"${daily.weight || ''}"`,
           `"${(daily.meds || '').replace(/"/g, '""')}"`,
           `"${(daily.memo || '').replace(/"/g, '""')}"`
@@ -1393,16 +1433,15 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `糖尿病食事記録_${getTodayString()}.csv`;
+      a.download = `糖尿病・血圧食事記録_${getTodayString()}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       exportModal.classList.add('hidden');
-      showToast('Excel(CSV)ファイルを保存しました');
+      showToast('血圧付きExcel(CSV)ファイルを保存しました');
     });
 
-    // 病院提出用A4印刷
     btnPrintPreview.addEventListener('click', () => {
       const filtered = getFilteredMealsForExport();
       if (filtered.length === 0) {
@@ -1410,14 +1449,45 @@
         return;
       }
 
+      const printVitalsBody = document.getElementById('print-vitals-body');
       const printTbody = document.getElementById('print-table-body');
+      printVitalsBody.innerHTML = '';
       printTbody.innerHTML = '';
 
       const printPeriodLabel = document.getElementById('print-period-label');
-      printPeriodLabel.textContent = `記録期間：${filtered[0].date} 〜 ${filtered[filtered.length - 1].date} （全${filtered.length}食）`;
+      printPeriodLabel.textContent = `記録期間：${filtered[0].date} 〜 ${filtered[filtered.length - 1].date}`;
+
+      const uniqueDates = Array.from(new Set(filtered.map(m => m.date))).sort();
+      uniqueDates.forEach(dateStr => {
+        const daily = dailyRecords[dateStr] || {};
+        
+        let morningBpStr = '-';
+        if (daily.bpMorningSys && daily.bpMorningDia) {
+          morningBpStr = `<b>${daily.bpMorningSys} / ${daily.bpMorningDia}</b> mmHg`;
+          if (daily.bpMorningPulse) morningBpStr += ` (${daily.bpMorningPulse}拍)`;
+        }
+
+        let eveningBpStr = '-';
+        if (daily.bpEveningSys && daily.bpEveningDia) {
+          eveningBpStr = `<b>${daily.bpEveningSys} / ${daily.bpEveningDia}</b> mmHg`;
+          if (daily.bpEveningPulse) eveningBpStr += ` (${daily.bpEveningPulse}拍)`;
+        }
+
+        const vTr = document.createElement('tr');
+        vTr.innerHTML = `
+          <td class="border border-slate-400 p-1.5 text-center font-bold">${dateStr}</td>
+          <td class="border border-slate-400 p-1.5 text-center">${morningBpStr}</td>
+          <td class="border border-slate-400 p-1.5 text-center">${eveningBpStr}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-medium">${daily.weight ? daily.weight + ' kg' : '-'}</td>
+          <td class="border border-slate-400 p-1.5">
+            ${daily.meds ? '<span class="font-semibold">[服薬]</span> ' + escapeHtml(daily.meds) + ' ' : ''}
+            ${daily.memo ? '<span class="text-slate-600">(' + escapeHtml(daily.memo) + ')</span>' : ''}
+          </td>
+        `;
+        printVitalsBody.appendChild(vTr);
+      });
 
       filtered.forEach(m => {
-        const daily = dailyRecords[m.date] || {};
         const pre = m.preBloodSugar || '';
         const post = m.postBloodSugar || '';
         let bsDisplay = '-';
@@ -1439,11 +1509,6 @@
           <td class="border border-slate-400 p-1.5 text-center font-bold text-violet-700">${m.carbs !== undefined && m.carbs !== null && m.carbs !== '' ? m.carbs + 'g' : '-'}</td>
           <td class="border border-slate-400 p-1.5 text-center">${m.calories ? m.calories + 'kcal' : '-'}</td>
           <td class="border border-slate-400 p-1.5 text-center ${Number(post) >= 180 ? 'text-red-600 font-bold' : ''}">${bsDisplay}</td>
-          <td class="border border-slate-400 p-1.5 text-[10px]">
-            ${daily.weight ? '体重:' + daily.weight + 'kg ' : ''}
-            ${daily.meds ? '服薬:' + escapeHtml(daily.meds) + ' ' : ''}
-            ${daily.memo ? '<br>' + escapeHtml(daily.memo) : ''}
-          </td>
         `;
         printTbody.appendChild(tr);
       });
@@ -1452,7 +1517,6 @@
       window.print();
     });
 
-    // クリップボードへコピー
     btnCopyClipboard.addEventListener('click', () => {
       const filtered = getFilteredMealsForExport();
       if (filtered.length === 0) {
@@ -1460,7 +1524,7 @@
         return;
       }
 
-      let text = `【糖尿病 食事・血糖記録】\n`;
+      let text = `【糖尿病 食事・血糖・家庭血圧記録】\n`;
       let curDate = '';
 
       filtered.forEach(m => {
@@ -1468,6 +1532,8 @@
           curDate = m.date;
           const daily = dailyRecords[curDate] || {};
           text += `\n■ ${curDate}`;
+          if (daily.bpMorningSys) text += ` [朝血圧:${daily.bpMorningSys}/${daily.bpMorningDia} 脈:${daily.bpMorningPulse || '-'}]`;
+          if (daily.bpEveningSys) text += ` [晩血圧:${daily.bpEveningSys}/${daily.bpEveningDia}]`;
           if (daily.weight) text += ` (体重:${daily.weight}kg)`;
           if (daily.meds) text += ` [服薬:${daily.meds}]`;
           text += `\n`;
@@ -1496,6 +1562,68 @@
 
       exportModal.classList.add('hidden');
       showToast('テキストをクリップボードにコピーしました');
+    });
+
+    btnOpenSync.addEventListener('click', () => {
+      syncModal.classList.remove('hidden');
+    });
+
+    btnCloseSync.addEventListener('click', () => {
+      syncModal.classList.add('hidden');
+    });
+
+    btnDownloadBackup.addEventListener('click', () => {
+      const backupData = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        meals: allMeals,
+        dailyRecords: dailyRecords,
+        mealMemory: mealMemory
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `diabetes_backup_${getTodayString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      syncModal.classList.add('hidden');
+      showToast('バックアップファイルを保存しました');
+    });
+
+    fileImportBackup.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          if (parsed && parsed.meals && parsed.dailyRecords) {
+            allMeals = parsed.meals;
+            dailyRecords = parsed.dailyRecords;
+            if (parsed.mealMemory) mealMemory = parsed.mealMemory;
+
+            saveData(STORAGE_KEY_MEALS, allMeals);
+            saveData(STORAGE_KEY_DAILY, dailyRecords);
+            saveData(STORAGE_KEY_MEMORY, mealMemory);
+
+            renderApp();
+            syncModal.classList.add('hidden');
+            showToast('タブレットに全データを復元しました！');
+          } else {
+            showToast('ファイル形式が正しくありません');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('ファイルの読み込みに失敗しました');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
     });
 
     window.addEventListener('load', () => {
