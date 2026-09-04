@@ -12,6 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js for Doctor Trend Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body {
@@ -138,6 +140,63 @@
         <div class="mt-1 flex items-baseline gap-1 truncate">
           <span id="stat-bp" class="text-sm sm:text-base font-bold text-slate-800">-</span>
         </div>
+      </div>
+    </section>
+
+    <!-- 医師・自己管理用トレンドグラフセクション -->
+    <section class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+            <i class="fa-solid fa-chart-area"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>バイタル推移グラフ</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">医師提示用</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">朝晩の家庭血圧とリブレ食前食後スパイクを可視化</p>
+          </div>
+        </div>
+
+        <!-- グラフ切り替えタブ＆期間セレクタ -->
+        <div class="flex items-center justify-between sm:justify-end gap-2">
+          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+            <button type="button" id="tab-graph-bp" class="px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition">血圧推移</button>
+            <button type="button" id="tab-graph-bs" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">血糖スパイク</button>
+          </div>
+
+          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+            <button type="button" data-days="7" class="btn-graph-range px-2 py-1 rounded-lg text-slate-600 transition">7日</button>
+            <button type="button" data-days="14" class="btn-graph-range px-2 py-1 rounded-lg bg-white text-slate-800 shadow-xs transition">14日</button>
+            <button type="button" data-days="30" class="btn-graph-range px-2 py-1 rounded-lg text-slate-600 transition">30日</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 統計インサイトバー（お医者さんが一番見たいサマリー） -->
+      <div id="graph-summary-bar" class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs">
+        <div>
+          <span class="text-[10px] text-slate-400 block">期間中 朝平均血圧</span>
+          <span id="chart-stat-morning-bp" class="font-bold text-slate-800">-</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 block">期間中 晩平均血圧</span>
+          <span id="chart-stat-evening-bp" class="font-bold text-slate-800">-</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 block">平均食後上昇 (Δ)</span>
+          <span id="chart-stat-avg-spike" class="font-bold text-emerald-700">-</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 block">最高食後血糖値</span>
+          <span id="chart-stat-max-bs" class="font-bold text-rose-600">-</span>
+        </div>
+      </div>
+
+      <!-- グラフ本体 Canvas -->
+      <div class="relative w-full h-64 sm:h-72">
+        <canvas id="trendChart"></canvas>
       </div>
     </section>
 
@@ -625,6 +684,10 @@
     let isListening = false;
     let quickBsTargetMealId = null;
 
+    let activeChartType = 'bp'; // 'bp' or 'bs'
+    let activeChartDays = 14;   // 7, 14, or 30
+    let vitalTrendChartInstance = null;
+
     function getTodayString() {
       const d = new Date();
       const year = d.getFullYear();
@@ -802,6 +865,39 @@
     const btnDownloadBackup = document.getElementById('btn-download-backup');
     const fileImportBackup = document.getElementById('file-import-backup');
 
+    const tabGraphBp = document.getElementById('tab-graph-bp');
+    const tabGraphBs = document.getElementById('tab-graph-bs');
+    const btnGraphRanges = document.querySelectorAll('.btn-graph-range');
+    const chartStatMorningBp = document.getElementById('chart-stat-morning-bp');
+    const chartStatEveningBp = document.getElementById('chart-stat-evening-bp');
+    const chartStatAvgSpike = document.getElementById('chart-stat-avg-spike');
+    const chartStatMaxBs = document.getElementById('chart-stat-max-bs');
+
+    tabGraphBp.addEventListener('click', () => {
+      activeChartType = 'bp';
+      tabGraphBp.className = 'px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition';
+      tabGraphBs.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      renderTrendChart();
+    });
+
+    tabGraphBs.addEventListener('click', () => {
+      activeChartType = 'bs';
+      tabGraphBs.className = 'px-2.5 py-1 rounded-lg bg-white text-rose-700 shadow-xs transition';
+      tabGraphBp.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      renderTrendChart();
+    });
+
+    btnGraphRanges.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btnGraphRanges.forEach(b => {
+          b.className = 'btn-graph-range px-2 py-1 rounded-lg text-slate-600 transition';
+        });
+        btn.className = 'btn-graph-range px-2 py-1 rounded-lg bg-white text-slate-800 shadow-xs transition';
+        activeChartDays = parseInt(btn.dataset.days, 10);
+        renderTrendChart();
+      });
+    });
+
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
 
@@ -851,6 +947,7 @@
       };
       saveData(STORAGE_KEY_DAILY, dailyRecords);
       updateStats();
+      renderTrendChart();
     }
 
     [
@@ -992,11 +1089,240 @@
       statBp.textContent = bpText;
     }
 
+    function getDatesInRange(numDays) {
+      const dates = [];
+      const end = new Date(selectedDate);
+      if (isNaN(end.getTime())) {
+        end.setTime(new Date().getTime());
+      }
+      for (let i = numDays - 1; i >= 0; i--) {
+        const d = new Date(end);
+        d.setDate(d.getDate() - i);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        dates.push(`${y}-${m}-${day}`);
+      }
+      return dates;
+    }
+
+    function renderTrendChart() {
+      const canvas = document.getElementById('trendChart');
+      if (!canvas || typeof Chart === 'undefined') return;
+
+      const dateList = getDatesInRange(activeChartDays);
+      const labels = dateList.map(d => {
+        const p = d.split('-');
+        return `${parseInt(p[1])}/${parseInt(p[2])}`;
+      });
+
+      if (activeChartType === 'bp') {
+        const morningSys = [];
+        const morningDia = [];
+        const eveningSys = [];
+        const eveningDia = [];
+
+        let mSysSum = 0, mDiaSum = 0, mCount = 0;
+        let eSysSum = 0, eDiaSum = 0, eCount = 0;
+
+        dateList.forEach(dStr => {
+          const rec = dailyRecords[dStr] || {};
+          const mS = rec.bpMorningSys ? Number(rec.bpMorningSys) : null;
+          const mD = rec.bpMorningDia ? Number(rec.bpMorningDia) : null;
+          const eS = rec.bpEveningSys ? Number(rec.bpEveningSys) : null;
+          const eD = rec.bpEveningDia ? Number(rec.bpEveningDia) : null;
+
+          morningSys.push(mS);
+          morningDia.push(mD);
+          eveningSys.push(eS);
+          eveningDia.push(eD);
+
+          if (mS && mD) {
+            mSysSum += mS; mDiaSum += mD; mCount++;
+          }
+          if (eS && eD) {
+            eSysSum += eS; eDiaSum += eD; eCount++;
+          }
+        });
+
+        chartStatMorningBp.textContent = mCount > 0 ? `${Math.round(mSysSum / mCount)} / ${Math.round(mDiaSum / mCount)}` : '-';
+        chartStatEveningBp.textContent = eCount > 0 ? `${Math.round(eSysSum / eCount)} / ${Math.round(eDiaSum / eCount)}` : '-';
+
+        if (vitalTrendChartInstance) vitalTrendChartInstance.destroy();
+
+        vitalTrendChartInstance = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: '朝 最高血圧(上)',
+                data: morningSys,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderWidth: 2.5,
+                tension: 0.25,
+                spanGaps: true
+              },
+              {
+                label: '朝 最低血圧(下)',
+                data: morningDia,
+                borderColor: '#fbbf24',
+                borderDash: [4, 4],
+                borderWidth: 1.8,
+                tension: 0.25,
+                spanGaps: true
+              },
+              {
+                label: '晩 最高血圧(上)',
+                data: eveningSys,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 2.5,
+                tension: 0.25,
+                spanGaps: true
+              },
+              {
+                label: '晩 最低血圧(下)',
+                data: eveningDia,
+                borderColor: '#818cf8',
+                borderDash: [4, 4],
+                borderWidth: 1.8,
+                tension: 0.25,
+                spanGaps: true
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } }
+              },
+              tooltip: {
+                callbacks: {
+                  afterTitle: () => '単位: mmHg'
+                }
+              }
+            },
+            scales: {
+              y: {
+                min: 50,
+                max: 180,
+                grid: { color: '#f1f5f9' },
+                ticks: { stepSize: 20, font: { size: 10 } }
+              },
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 10 } }
+              }
+            }
+          }
+        });
+      } else {
+        const preBsData = [];
+        const postBsData = [];
+        let allSpikes = [];
+        let maxBsFound = 0;
+
+        dateList.forEach(dStr => {
+          const daysMeals = allMeals.filter(m => m.date === dStr);
+          let avgPre = null;
+          let avgPost = null;
+          const preVals = daysMeals.map(m => Number(m.preBloodSugar)).filter(v => v && !isNaN(v));
+          const postVals = daysMeals.map(m => Number(m.postBloodSugar)).filter(v => v && !isNaN(v));
+
+          if (preVals.length > 0) avgPre = Math.round(preVals.reduce((a, b) => a + b, 0) / preVals.length);
+          if (postVals.length > 0) {
+            avgPost = Math.round(postVals.reduce((a, b) => a + b, 0) / postVals.length);
+            maxBsFound = Math.max(maxBsFound, ...postVals);
+          }
+
+          daysMeals.forEach(m => {
+            if (m.preBloodSugar && m.postBloodSugar) {
+              const diff = Number(m.postBloodSugar) - Number(m.preBloodSugar);
+              allSpikes.push(diff);
+            }
+          });
+
+          preBsData.push(avgPre);
+          postBsData.push(avgPost);
+        });
+
+        if (allSpikes.length > 0) {
+          const avgSp = Math.round(allSpikes.reduce((a, b) => a + b, 0) / allSpikes.length);
+          chartStatAvgSpike.textContent = `+${avgSp} mg/dL`;
+        } else {
+          chartStatAvgSpike.textContent = '-';
+        }
+        chartStatMaxBs.textContent = maxBsFound > 0 ? `${maxBsFound} mg/dL` : '-';
+
+        if (vitalTrendChartInstance) vitalTrendChartInstance.destroy();
+
+        vitalTrendChartInstance = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: '食前血糖 平均',
+                data: preBsData,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 2,
+                pointRadius: 4,
+                tension: 0.2,
+                spanGaps: true
+              },
+              {
+                label: '食後血糖 平均 (リブレ)',
+                data: postBsData,
+                borderColor: '#f43f5e',
+                backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                fill: true,
+                borderWidth: 2.5,
+                pointRadius: 5,
+                tension: 0.2,
+                spanGaps: true
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } }
+              }
+            },
+            scales: {
+              y: {
+                min: 70,
+                max: 240,
+                grid: { color: '#f1f5f9' },
+                ticks: { stepSize: 30, font: { size: 10 } }
+              },
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 10 } }
+              }
+            }
+          }
+        });
+      }
+    }
+
     function renderApp() {
       updateDateDisplay();
       renderDailyHealthFields();
       renderMealsList();
       updateStats();
+      renderTrendChart();
     }
 
     btnPrevDay.addEventListener('click', () => {
@@ -1234,6 +1560,7 @@
 
       hideModal();
       renderApp();
+      renderTrendChart();
       showToast('食事を保存しました！');
     }
 
