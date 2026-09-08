@@ -621,8 +621,10 @@
     const STORAGE_KEY_DAILY = 'diabetic_meal_tracker_daily_v2';
     const STORAGE_KEY_MEMORY = 'diabetic_meal_tracker_memory_v2';
 
-    // 定番料理の糖質・カロリーデータベース（通信環境に依存せず即座に機能）
+    // 定番料理・コンビニ・丼ものデータベース
     const COMMON_FOOD_DB = [
+      { keywords: ['セイコーマートの豚丼', 'セコマの豚丼', 'ホットシェフ豚丼', 'セコマ豚丼'], carbs: 83.0, calories: 645, carb: '豚肉甘辛タレ・白米しっかり', name: 'セコマ豚丼' },
+      { keywords: ['豚丼', '豚めし', '十勝豚丼'], carbs: 80.0, calories: 620, carb: '甘辛タレ・豚肉・ご飯', name: '豚丼' },
       { keywords: ['かつ丼', 'カツ丼', 'ロースかつ丼', 'ヒレカツ丼'], carbs: 115.0, calories: 920, carb: 'カツ衣・甘辛タレ・白米に糖質多め', name: 'かつ丼' },
       { keywords: ['牛丼', '牛めし'], carbs: 98.0, calories: 730, carb: '甘辛タレ・ご飯多め', name: '牛丼' },
       { keywords: ['親子丼'], carbs: 95.0, calories: 650, carb: 'みりん・砂糖タレ・ご飯多め', name: '親子丼' },
@@ -633,9 +635,10 @@
       { keywords: ['オムライス'], carbs: 92.0, calories: 760, carb: 'ケチャップライス・ケチャップ糖質', name: 'オムライス' },
       { keywords: ['中華丼'], carbs: 88.0, calories: 630, carb: '餡の片栗粉とご飯に糖質', name: '中華丼' },
       { keywords: ['うな丼', 'うな重', '鰻'], carbs: 95.0, calories: 750, carb: '甘だれ・ご飯多め', name: 'うな丼' },
+      { keywords: ['ツナマヨおにぎり', 'マヨおにぎり', 'ツナマヨ'], carbs: 38.0, calories: 220, carb: 'ツナマヨ具材', name: 'ツナマヨおにぎり' },
+      { keywords: ['鮭おにぎり', '梅おにぎり', '昆布おにぎり', 'おにぎり', 'おむすび'], carbs: 39.0, calories: 180, carb: 'おにぎり1個', name: 'おにぎり' },
       { keywords: ['白米', 'ご飯', 'ごはん', 'お米'], carbs: 55.0, calories: 240, carb: 'ご飯1膳（約150g）', name: 'ご飯（1膳）' },
       { keywords: ['玄米', '麦飯', '雑穀米'], carbs: 48.0, calories: 230, carb: '食物繊維豊富・低GI', name: '玄米・雑穀米（1膳）' },
-      { keywords: ['おにぎり', 'おむすび'], carbs: 39.0, calories: 175, carb: 'おにぎり1個', name: 'おにぎり（1個）' },
       { keywords: ['食パン', 'トースト'], carbs: 28.0, calories: 160, carb: '6枚切り1枚', name: '食パン（1枚）' },
       { keywords: ['クロワッサン'], carbs: 19.0, calories: 180, carb: '脂質高め・糖質はやや控えめ', name: 'クロワッサン' },
       { keywords: ['ラーメン', 'らーめん', '醤油ラーメン', '味噌ラーメン', '豚骨ラーメン'], carbs: 68.0, calories: 550, carb: '中華麺1玉に糖質集中', name: 'ラーメン' },
@@ -644,7 +647,7 @@
       { keywords: ['ざる蕎麦', '蕎麦', 'そば', 'かけそば'], carbs: 52.0, calories: 350, carb: 'ルチン含有・うどんより低GI', name: 'そば' },
       { keywords: ['パスタ', 'スパゲティ', 'ナポリタン', 'ミートソース', 'カルボナーラ'], carbs: 75.0, calories: 650, carb: 'デュラム小麦パスタ1人前', name: 'パスタ' },
       { keywords: ['焼きそば', 'ソース焼きそば'], carbs: 65.0, calories: 520, carb: '中華麺と濃厚ソース', name: '焼きそば' },
-      { keywords: ['唐揚げ', 'から揚げ', 'からあげ'], carbs: 16.0, calories: 380, carb: '衣の片栗粉・小麦粉', name: '鶏の唐揚げ' },
+      { keywords: ['唐揚げ', 'から揚げ', 'からあげ', 'フライドチキン'], carbs: 16.0, calories: 380, carb: '衣の片栗粉・小麦粉', name: '鶏の唐揚げ' },
       { keywords: ['生姜焼き', '豚の生姜焼き'], carbs: 12.0, calories: 390, carb: 'タレの砂糖・みりん', name: '豚の生姜焼き' },
       { keywords: ['ハンバーグ'], carbs: 15.0, calories: 420, carb: 'つなぎのパン粉とソース', name: 'ハンバーグ' },
       { keywords: ['焼き鮭', '鮭の塩焼き', '焼魚', '焼き魚', 'サバの塩焼き'], carbs: 0.5, calories: 210, carb: 'ほぼ糖質ゼロ・良質なたんぱく質', name: '焼き魚' },
@@ -662,17 +665,70 @@
       { keywords: ['卵焼き', '目玉焼き', 'ゆで卵'], carbs: 1.0, calories: 95, carb: '超低糖質（甘い卵焼きは+3g）', name: '卵料理' }
     ];
 
-    function findLocalFoodMatch(text) {
-      if (!text) return null;
-      const clean = text.toLowerCase().replace(/\s+/g, '');
-      for (const item of COMMON_FOOD_DB) {
+    // 単一食品のマッチ関数
+    function findSingleFoodMatch(itemText) {
+      if (!itemText) return null;
+      const clean = itemText.toLowerCase().replace(/\s+/g, '');
+      // 一致の長さが長いもの（より具体的な名称）からマッチング
+      const sorted = [...COMMON_FOOD_DB].sort((a, b) => {
+        const maxA = Math.max(...a.keywords.map(k => k.length));
+        const maxB = Math.max(...b.keywords.map(k => k.length));
+        return maxB - maxA;
+      });
+
+      for (const item of sorted) {
         for (const kw of item.keywords) {
           if (clean.includes(kw.toLowerCase())) {
             return item;
           }
         }
       }
+
+      // 未登録品目のざっくり推計
+      if (/丼|重/.test(clean)) return { name: itemText, carbs: 85.0, calories: 650, carb: 'ご飯・タレに糖質' };
+      if (/ラーメン|うどん|そば|パスタ|麺/.test(clean)) return { name: itemText, carbs: 65.0, calories: 520, carb: '主食麺類' };
+      if (/定食|弁当/.test(clean)) return { name: itemText, carbs: 70.0, calories: 680, carb: 'おかず・主食一式' };
+      if (/パン|サンド/.test(clean)) return { name: itemText, carbs: 35.0, calories: 280, carb: 'パン類' };
+      if (/サラダ|おひたし|和え物/.test(clean)) return { name: itemText, carbs: 5.0, calories: 50, carb: '野菜類' };
+      if (/スープ|汁/.test(clean)) return { name: itemText, carbs: 5.0, calories: 60, carb: '汁物' };
+      if (/肉|ステーキ|焼肉|からあげ|カツ/.test(clean)) return { name: itemText, carbs: 12.0, calories: 350, carb: '主菜（肉）' };
+      if (/魚|刺身|塩焼き/.test(clean)) return { name: itemText, carbs: 1.0, calories: 200, carb: '主菜（魚）' };
+
       return null;
+    }
+
+    // カンマ（, や 、）、改行、スペース区切りの複数品目を合算する関数
+    function calculateTotalNutrition(fullText) {
+      if (!fullText) return null;
+      // カンマ、読点、スラッシュ、プラス、改行で分割
+      const rawItems = fullText.split(/[,、/+\n]/).map(s => s.trim()).filter(Boolean);
+      const itemsToProcess = rawItems.length > 0 ? rawItems : [fullText.trim()];
+
+      let totalCarbs = 0;
+      let totalCalories = 0;
+      const matchedNames = [];
+      const carbNotes = [];
+
+      itemsToProcess.forEach(itemStr => {
+        const match = findSingleFoodMatch(itemStr);
+        if (match) {
+          totalCarbs += match.carbs;
+          totalCalories += match.calories;
+          matchedNames.push(`${match.name}(${match.carbs}g)`);
+          if (match.carb && !carbNotes.includes(match.carb)) {
+            carbNotes.push(match.carb);
+          }
+        }
+      });
+
+      if (matchedNames.length === 0) return null;
+
+      return {
+        totalCarbs: Math.round(totalCarbs * 10) / 10,
+        totalCalories: Math.round(totalCalories),
+        itemSummary: matchedNames.join(' + '),
+        carbNote: carbNotes.join('、')
+      };
     }
 
     let selectedDate = getTodayString();
@@ -1645,43 +1701,27 @@
       btnAiEstimate.disabled = true;
       aiBtnText.textContent = '計算中...';
 
-      const match = findLocalFoodMatch(text);
-      if (match) {
-        inputMealCarbsNum.value = match.carbs;
-        inputMealCalories.value = match.calories;
-        if (!inputMealCarb.value) {
-          inputMealCarb.value = match.carb;
+      const result = calculateTotalNutrition(text);
+      if (result) {
+        inputMealCarbsNum.value = result.totalCarbs;
+        inputMealCalories.value = result.totalCalories;
+        if (!inputMealCarb.value && result.carbNote) {
+          inputMealCarb.value = result.carbNote;
         }
-        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 「${match.name}」の推定値（糖質 ${match.carbs}g / ${match.calories}kcal）を適用しました。`;
+        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 【合計】糖質 <b>${result.totalCarbs}g</b> / <b>${result.totalCalories}kcal</b><br><span class="text-[10px] text-slate-500">内訳: ${escapeHtml(result.itemSummary)}</span>`;
       } else {
-        // 未登録料理用の一般的基準推計
-        let estCarbs = 40.0;
-        let estCal = 450;
-        let memo = '一般的な主食・おかずの目安';
-
-        if (/定食|御膳/.test(text)) {
-          estCarbs = 65.0;
-          estCal = 650;
-          memo = 'ご飯・小鉢付き定食の目安';
-        } else if (/丼|重/.test(text)) {
-          estCarbs = 95.0;
-          estCal = 750;
-          memo = 'ご飯多め・タレの糖質注意';
-        } else if (/麺|ラーメン|パスタ|うどん|そば/.test(text)) {
-          estCarbs = 65.0;
-          estCal = 550;
-          memo = '麺1人前分の糖質目安';
-        }
-
+        // 全く判別できない場合の標準値
+        const estCarbs = 50.0;
+        const estCal = 550;
         inputMealCarbsNum.value = estCarbs;
         inputMealCalories.value = estCal;
-        if (!inputMealCarb.value) inputMealCarb.value = memo;
-        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 推定値（糖質 ${estCarbs}g / ${estCal}kcal）を算出しました。`;
+        if (!inputMealCarb.value) inputMealCarb.value = '目安（主食・主菜）';
+        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 1食分の標準目安（糖質 ${estCarbs}g / ${estCal}kcal）をセットしました。`;
       }
 
       btnAiEstimate.disabled = false;
       aiBtnText.textContent = '糖質・カロリーを自動計算';
-      showToast('糖質・カロリーを自動入力しました');
+      showToast('糖質・カロリーを合算入力しました');
     }
 
     btnAiEstimate.addEventListener('click', estimateNutritionWithAI);
