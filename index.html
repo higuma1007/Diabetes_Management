@@ -620,9 +620,21 @@
     const STORAGE_KEY_MEALS = 'diabetic_meal_tracker_records_v2';
     const STORAGE_KEY_DAILY = 'diabetic_meal_tracker_daily_v2';
     const STORAGE_KEY_MEMORY = 'diabetic_meal_tracker_memory_v2';
+    const STORAGE_KEY_CUSTOM_DICT = 'diabetic_meal_tracker_custom_dict_v1';
 
-    // 定番料理・コンビニ・丼ものデータベース
+    // 定番料理・コンビニ・スープ・日常食データベース（市販1食分の実測ベース）
     const COMMON_FOOD_DB = [
+      // 市販スープ・汁物（クノール等の実測値：1袋/1杯あたり）
+      { keywords: ['クノールのポタージュスープ', 'クノールポタージュ', 'ポタージュスープ', 'ポタージュ'], carbs: 12.0, calories: 65, carb: 'カップスープ1袋（約150ml）', name: 'ポタージュスープ' },
+      { keywords: ['クノールコーンクリーム', 'コーンクリームスープ', 'コーンポタージュ', 'コーンスープ'], carbs: 12.5, calories: 72, carb: 'カップスープ1袋', name: 'コーンスープ' },
+      { keywords: ['クノール', 'カップスープ'], carbs: 11.0, calories: 65, carb: '粉末カップスープ1袋', name: 'カップスープ' },
+      { keywords: ['オニオンスープ', 'オニオングラタン'], carbs: 6.5, calories: 45, carb: '玉ねぎスープ', name: 'オニオンスープ' },
+      { keywords: ['ミネストローネ'], carbs: 9.0, calories: 70, carb: 'トマト野菜スープ', name: 'ミネストローネ' },
+      { keywords: ['わかめスープ'], carbs: 1.5, calories: 20, carb: '低糖質・低カロリー', name: 'わかめスープ' },
+      { keywords: ['春雨スープ', 'スープはるさめ'], carbs: 18.0, calories: 95, carb: '春雨（でんぷん質）', name: '春雨スープ' },
+      { keywords: ['豚汁'], carbs: 6.5, calories: 140, carb: '根菜・豚肉具沢山', name: '豚汁' },
+
+      // 定番丼・ご飯もの
       { keywords: ['セイコーマートの豚丼', 'セコマの豚丼', 'ホットシェフ豚丼', 'セコマ豚丼'], carbs: 83.0, calories: 645, carb: '豚肉甘辛タレ・白米しっかり', name: 'セコマ豚丼' },
       { keywords: ['豚丼', '豚めし', '十勝豚丼'], carbs: 80.0, calories: 620, carb: '甘辛タレ・豚肉・ご飯', name: '豚丼' },
       { keywords: ['かつ丼', 'カツ丼', 'ロースかつ丼', 'ヒレカツ丼'], carbs: 115.0, calories: 920, carb: 'カツ衣・甘辛タレ・白米に糖質多め', name: 'かつ丼' },
@@ -635,18 +647,24 @@
       { keywords: ['オムライス'], carbs: 92.0, calories: 760, carb: 'ケチャップライス・ケチャップ糖質', name: 'オムライス' },
       { keywords: ['中華丼'], carbs: 88.0, calories: 630, carb: '餡の片栗粉とご飯に糖質', name: '中華丼' },
       { keywords: ['うな丼', 'うな重', '鰻'], carbs: 95.0, calories: 750, carb: '甘だれ・ご飯多め', name: 'うな丼' },
+
+      // おにぎり・主食
       { keywords: ['ツナマヨおにぎり', 'マヨおにぎり', 'ツナマヨ'], carbs: 38.0, calories: 220, carb: 'ツナマヨ具材', name: 'ツナマヨおにぎり' },
       { keywords: ['鮭おにぎり', '梅おにぎり', '昆布おにぎり', 'おにぎり', 'おむすび'], carbs: 39.0, calories: 180, carb: 'おにぎり1個', name: 'おにぎり' },
       { keywords: ['白米', 'ご飯', 'ごはん', 'お米'], carbs: 55.0, calories: 240, carb: 'ご飯1膳（約150g）', name: 'ご飯（1膳）' },
       { keywords: ['玄米', '麦飯', '雑穀米'], carbs: 48.0, calories: 230, carb: '食物繊維豊富・低GI', name: '玄米・雑穀米（1膳）' },
       { keywords: ['食パン', 'トースト'], carbs: 28.0, calories: 160, carb: '6枚切り1枚', name: '食パン（1枚）' },
       { keywords: ['クロワッサン'], carbs: 19.0, calories: 180, carb: '脂質高め・糖質はやや控えめ', name: 'クロワッサン' },
+
+      // 麺類
       { keywords: ['ラーメン', 'らーめん', '醤油ラーメン', '味噌ラーメン', '豚骨ラーメン'], carbs: 68.0, calories: 550, carb: '中華麺1玉に糖質集中', name: 'ラーメン' },
       { keywords: ['つけ麺'], carbs: 85.0, calories: 750, carb: '麺量多め・濃厚スープ', name: 'つけ麺' },
       { keywords: ['うどん', 'かけうどん', '讃岐うどん'], carbs: 58.0, calories: 340, carb: 'うどん麺は消化吸収が早い', name: 'かけうどん' },
       { keywords: ['ざる蕎麦', '蕎麦', 'そば', 'かけそば'], carbs: 52.0, calories: 350, carb: 'ルチン含有・うどんより低GI', name: 'そば' },
       { keywords: ['パスタ', 'スパゲティ', 'ナポリタン', 'ミートソース', 'カルボナーラ'], carbs: 75.0, calories: 650, carb: 'デュラム小麦パスタ1人前', name: 'パスタ' },
       { keywords: ['焼きそば', 'ソース焼きそば'], carbs: 65.0, calories: 520, carb: '中華麺と濃厚ソース', name: '焼きそば' },
+
+      // おかず・惣菜
       { keywords: ['唐揚げ', 'から揚げ', 'からあげ', 'フライドチキン'], carbs: 16.0, calories: 380, carb: '衣の片栗粉・小麦粉', name: '鶏の唐揚げ' },
       { keywords: ['生姜焼き', '豚の生姜焼き'], carbs: 12.0, calories: 390, carb: 'タレの砂糖・みりん', name: '豚の生姜焼き' },
       { keywords: ['ハンバーグ'], carbs: 15.0, calories: 420, carb: 'つなぎのパン粉とソース', name: 'ハンバーグ' },
@@ -665,11 +683,40 @@
       { keywords: ['卵焼き', '目玉焼き', 'ゆで卵'], carbs: 1.0, calories: 95, carb: '超低糖質（甘い卵焼きは+3g）', name: '卵料理' }
     ];
 
-    // 単一食品のマッチ関数
+    let userCustomDict = {};
+
+    // ユーザー自身が登録・手動修正した辞書を最優先で照会する関数
+    function findUserCustomMatch(itemText) {
+      if (!itemText) return null;
+      const clean = itemText.toLowerCase().replace(/[\s　]/g, '');
+      
+      // 1. 完全一致・部分一致を長い単語から探索
+      const keys = Object.keys(userCustomDict).sort((a, b) => b.length - a.length);
+      for (const k of keys) {
+        const cleanK = k.toLowerCase().replace(/[\s　]/g, '');
+        if (clean === cleanK || clean.includes(cleanK) || cleanK.includes(clean)) {
+          const entry = userCustomDict[k];
+          return {
+            name: k,
+            carbs: Number(entry.carbs) || 0,
+            calories: Number(entry.calories) || 0,
+            carb: entry.carb || 'マイ辞書から呼出',
+            isUserCustom: true
+          };
+        }
+      }
+      return null;
+    }
+
+    // 単一食品のマッチ関数（マイ辞書を最優先、次に内蔵定番DB）
     function findSingleFoodMatch(itemText) {
       if (!itemText) return null;
+
+      // 最優先: ユーザーが過去に自分で入力・修正したマイ辞書データ
+      const userMatch = findUserCustomMatch(itemText);
+      if (userMatch) return userMatch;
+
       const clean = itemText.toLowerCase().replace(/\s+/g, '');
-      // 一致の長さが長いもの（より具体的な名称）からマッチング
       const sorted = [...COMMON_FOOD_DB].sort((a, b) => {
         const maxA = Math.max(...a.keywords.map(k => k.length));
         const maxB = Math.max(...b.keywords.map(k => k.length));
@@ -685,12 +732,13 @@
       }
 
       // 未登録品目のざっくり推計
+      if (/ポタージュ|コーンスープ|スープ/.test(clean)) return { name: itemText, carbs: 12.0, calories: 68, carb: 'スープ1杯目安' };
       if (/丼|重/.test(clean)) return { name: itemText, carbs: 85.0, calories: 650, carb: 'ご飯・タレに糖質' };
       if (/ラーメン|うどん|そば|パスタ|麺/.test(clean)) return { name: itemText, carbs: 65.0, calories: 520, carb: '主食麺類' };
       if (/定食|弁当/.test(clean)) return { name: itemText, carbs: 70.0, calories: 680, carb: 'おかず・主食一式' };
       if (/パン|サンド/.test(clean)) return { name: itemText, carbs: 35.0, calories: 280, carb: 'パン類' };
       if (/サラダ|おひたし|和え物/.test(clean)) return { name: itemText, carbs: 5.0, calories: 50, carb: '野菜類' };
-      if (/スープ|汁/.test(clean)) return { name: itemText, carbs: 5.0, calories: 60, carb: '汁物' };
+      if (/汁/.test(clean)) return { name: itemText, carbs: 4.0, calories: 50, carb: '汁物' };
       if (/肉|ステーキ|焼肉|からあげ|カツ/.test(clean)) return { name: itemText, carbs: 12.0, calories: 350, carb: '主菜（肉）' };
       if (/魚|刺身|塩焼き/.test(clean)) return { name: itemText, carbs: 1.0, calories: 200, carb: '主菜（魚）' };
 
@@ -700,7 +748,6 @@
     // カンマ（, や 、）、改行、スペース区切りの複数品目を合算する関数
     function calculateTotalNutrition(fullText) {
       if (!fullText) return null;
-      // カンマ、読点、スラッシュ、プラス、改行で分割
       const rawItems = fullText.split(/[,、/+\n]/).map(s => s.trim()).filter(Boolean);
       const itemsToProcess = rawItems.length > 0 ? rawItems : [fullText.trim()];
 
@@ -708,13 +755,16 @@
       let totalCalories = 0;
       const matchedNames = [];
       const carbNotes = [];
+      let hasCustomUserMatch = false;
 
       itemsToProcess.forEach(itemStr => {
         const match = findSingleFoodMatch(itemStr);
         if (match) {
           totalCarbs += match.carbs;
           totalCalories += match.calories;
-          matchedNames.push(`${match.name}(${match.carbs}g)`);
+          const tag = match.isUserCustom ? '⭐マイ学習' : '';
+          matchedNames.push(`${match.name}${tag}(${match.carbs}g)`);
+          if (match.isUserCustom) hasCustomUserMatch = true;
           if (match.carb && !carbNotes.includes(match.carb)) {
             carbNotes.push(match.carb);
           }
@@ -727,7 +777,8 @@
         totalCarbs: Math.round(totalCarbs * 10) / 10,
         totalCalories: Math.round(totalCalories),
         itemSummary: matchedNames.join(' + '),
-        carbNote: carbNotes.join('、')
+        carbNote: carbNotes.join('、'),
+        hasCustomUserMatch: hasCustomUserMatch
       };
     }
 
@@ -784,6 +835,12 @@
 
         const savedMemory = localStorage.getItem(STORAGE_KEY_MEMORY);
         mealMemory = savedMemory ? JSON.parse(savedMemory) : [];
+
+        const savedDict = localStorage.getItem(STORAGE_KEY_CUSTOM_DICT);
+        userCustomDict = savedDict ? JSON.parse(savedDict) : {
+          'クノールのポタージュスープ': { carbs: 12.0, calories: 65, carb: 'カップスープ1袋' },
+          'ポタージュスープ': { carbs: 12.0, calories: 65, carb: 'カップスープ1袋' }
+        };
 
         if (allMeals.length === 0) {
           seedSampleData();
@@ -1561,6 +1618,8 @@
     function rememberMeal(content, carbs, calories, carb) {
       if (!content || content.length < 2) return;
       const cleanContent = content.trim();
+
+      // 1. 最近の履歴チップ用メモリ
       const existingIdx = mealMemory.findIndex(m => m.content === cleanContent);
       const newEntry = {
         content: cleanContent,
@@ -1574,6 +1633,18 @@
       mealMemory.push(newEntry);
       if (mealMemory.length > 30) mealMemory.shift();
       saveData(STORAGE_KEY_MEMORY, mealMemory);
+
+      // 2. 「マイ辞書」への自動学習（カンマ区切りの個別品目も分解して学習）
+      const subItems = cleanContent.split(/[,、/+\n]/).map(s => s.trim()).filter(Boolean);
+      if (subItems.length === 1 && carbs !== '' && calories !== '') {
+        // 単一メニューの場合はその数値をそのまま学習
+        userCustomDict[cleanContent] = {
+          carbs: Number(carbs),
+          calories: Number(calories),
+          carb: carb || ''
+        };
+      }
+      saveData(STORAGE_KEY_CUSTOM_DICT, userCustomDict);
     }
 
     function saveMealRecord() {
@@ -1708,20 +1779,22 @@
         if (!inputMealCarb.value && result.carbNote) {
           inputMealCarb.value = result.carbNote;
         }
-        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 【合計】糖質 <b>${result.totalCarbs}g</b> / <b>${result.totalCalories}kcal</b><br><span class="text-[10px] text-slate-500">内訳: ${escapeHtml(result.itemSummary)}</span>`;
+        const customBadge = result.hasCustomUserMatch
+          ? `<span class="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded-md font-bold ml-1">⭐マイ学習数値適用</span>`
+          : '';
+        aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 【合計】糖質 <b>${result.totalCarbs}g</b> / <b>${result.totalCalories}kcal</b> ${customBadge}<br><span class="text-[10px] text-slate-500">内訳: ${escapeHtml(result.itemSummary)}</span>`;
       } else {
-        // 全く判別できない場合の標準値
-        const estCarbs = 50.0;
-        const estCal = 550;
+        const estCarbs = 40.0;
+        const estCal = 450;
         inputMealCarbsNum.value = estCarbs;
         inputMealCalories.value = estCal;
-        if (!inputMealCarb.value) inputMealCarb.value = '目安（主食・主菜）';
+        if (!inputMealCarb.value) inputMealCarb.value = '目安';
         aiStatusMsg.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> 1食分の標準目安（糖質 ${estCarbs}g / ${estCal}kcal）をセットしました。`;
       }
 
       btnAiEstimate.disabled = false;
       aiBtnText.textContent = '糖質・カロリーを自動計算';
-      showToast('糖質・カロリーを合算入力しました');
+      showToast(result && result.hasCustomUserMatch ? 'マイ学習辞書の数値を適用しました！' : '糖質・カロリーを自動計算しました');
     }
 
     btnAiEstimate.addEventListener('click', estimateNutritionWithAI);
@@ -1945,7 +2018,8 @@
         exportedAt: new Date().toISOString(),
         meals: allMeals,
         dailyRecords: dailyRecords,
-        mealMemory: mealMemory
+        mealMemory: mealMemory,
+        userCustomDict: userCustomDict
       };
 
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
@@ -1973,14 +2047,16 @@
             allMeals = parsed.meals;
             dailyRecords = parsed.dailyRecords;
             if (parsed.mealMemory) mealMemory = parsed.mealMemory;
+            if (parsed.userCustomDict) userCustomDict = parsed.userCustomDict;
 
             saveData(STORAGE_KEY_MEALS, allMeals);
             saveData(STORAGE_KEY_DAILY, dailyRecords);
             saveData(STORAGE_KEY_MEMORY, mealMemory);
+            saveData(STORAGE_KEY_CUSTOM_DICT, userCustomDict);
 
             renderApp();
             syncModal.classList.add('hidden');
-            showToast('タブレットに全データを復元しました！');
+            showToast('タブレットに全データ＆マイ辞書を復元しました！');
           } else {
             showToast('ファイル形式が正しくありません');
           }
