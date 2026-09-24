@@ -17,6 +17,8 @@
   <!-- QR Code Generator & Camera Scanner for Direct Tablet Sync -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- LZ-String for Extreme QR Data Compression -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 
   <style>
     body {
@@ -557,18 +559,22 @@
       <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
         <button type="button" id="tab-sync-qr" class="flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5">
           <i class="fa-solid fa-qrcode"></i>
-          <span>カメラでQR直接同期</span>
+          <span>カメラQR同期</span>
+        </button>
+        <button type="button" id="tab-sync-text" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-copy"></i>
+          <span>LINE/テキスト貼付</span>
         </button>
         <button type="button" id="tab-sync-file" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
           <i class="fa-solid fa-file-arrow-up"></i>
-          <span>ファイル保存 (予備)</span>
+          <span>ファイル保存</span>
         </button>
       </div>
 
       <!-- QRコード同期パネル -->
       <div id="panel-sync-qr" class="space-y-3">
         <p class="text-xs text-slate-500 leading-relaxed">
-          Googleドライブ不要。スマホでQRを表示し、タブレットのカメラでかざすだけで全データが同期します。
+          スマホの画面にQRを表示し、タブレットのカメラでかざすだけで同期します。
         </p>
 
         <div class="grid grid-cols-2 gap-2">
@@ -584,10 +590,15 @@
           </button>
         </div>
 
-        <div id="qr-display-box" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-2">
-          <div class="text-xs font-bold text-slate-700">タブレットのカメラで読み取ってください</div>
-          <div id="qrcode-container" class="flex justify-center p-2 bg-white rounded-xl shadow-xs mx-auto w-fit"></div>
-          <p id="qr-size-note" class="text-[10px] text-slate-400">直近30日分のデータ＋血圧＋マイ学習辞書</p>
+        <div id="qr-display-box" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-3">
+          <div class="flex items-center justify-center gap-2">
+            <span class="text-xs text-slate-600 font-medium">同期期間:</span>
+            <button type="button" id="btn-qr-days-14" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs">直近14日分</button>
+            <button type="button" id="btn-qr-days-30" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600">直近30日分</button>
+          </div>
+
+          <div id="qrcode-container" class="flex justify-center p-3 bg-white rounded-xl shadow-xs mx-auto w-fit"></div>
+          <p id="qr-size-note" class="text-[11px] text-slate-500 font-medium">タブレットのカメラで読み取ってください</p>
         </div>
 
         <div id="qr-scanner-box" class="hidden space-y-2">
@@ -596,6 +607,35 @@
           </div>
           <button type="button" id="btn-stop-scanner" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">
             カメラを終了する
+          </button>
+        </div>
+      </div>
+
+      <!-- LINE/テキスト貼付同期パネル（ファイル操作完全不要） -->
+      <div id="panel-sync-text" class="space-y-3 hidden">
+        <p class="text-xs text-slate-500 leading-relaxed">
+          ドライブやファイル保存は一切不要。文字コードをコピーしてLINEで送るだけで、全期間のデータが一瞬で同期できます。
+        </p>
+
+        <div class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl space-y-2">
+          <span class="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-mobile-screen text-emerald-600"></i> 【スマホ側】同期コードをコピー
+          </span>
+          <p class="text-[11px] text-slate-500 leading-relaxed">ボタンを押して、LINEの自分用トーク等にペーストして送るだけです。</p>
+          <button type="button" id="btn-copy-sync-code" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-copy"></i>
+            <span>全データ同期コードをコピー</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-2">
+          <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-tablet-screen-button text-indigo-600"></i> 【タブレット側】届いたコードを貼り付け
+          </span>
+          <textarea id="input-sync-code" rows="2" placeholder="LINEで届いた同期コードをここに貼り付け" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+          <button type="button" id="btn-apply-sync-code" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>このコードで同期を完了する</span>
           </button>
         </div>
       </div>
@@ -979,17 +1019,19 @@
     const syncModal = document.getElementById('sync-modal');
     const btnCloseSync = document.getElementById('btn-close-sync');
     const tabSyncQr = document.getElementById('tab-sync-qr');
+    const tabSyncText = document.getElementById('tab-sync-text');
     const tabSyncFile = document.getElementById('tab-sync-file');
     const panelSyncQr = document.getElementById('panel-sync-qr');
+    const panelSyncText = document.getElementById('panel-sync-text');
     const panelSyncFile = document.getElementById('panel-sync-file');
     const btnShowQrMode = document.getElementById('btn-show-qr-mode');
     const btnScanQrMode = document.getElementById('btn-scan-qr-mode');
     const qrDisplayBox = document.getElementById('qr-display-box');
     const qrScannerBox = document.getElementById('qr-scanner-box');
     const qrcodeContainer = document.getElementById('qrcode-container');
-    const btnStopScanner = document.getElementById('btn-stop-scanner');
-    const btnDownloadBackup = document.getElementById('btn-download-backup');
-    const fileImportBackup = document.getElementById('file-import-backup');
+    const btnQrDays14 = document.getElementById('btn-qr-days-14');
+    const btnQrDays30 = document.getElementById('btn-qr-days-30');
+    let qrTargetDays = 14;
 
     const tabGraphBp = document.getElementById('tab-graph-bp');
     const tabGraphBs = document.getElementById('tab-graph-bs');
@@ -998,6 +1040,13 @@
     const chartStatEveningBp = document.getElementById('chart-stat-evening-bp');
     const chartStatAvgSpike = document.getElementById('chart-stat-avg-spike');
     const chartStatMaxBs = document.getElementById('chart-stat-max-bs');
+    const btnStopScanner = document.getElementById('btn-stop-scanner');
+    const btnDownloadBackup = document.getElementById('btn-download-backup');
+    const fileImportBackup = document.getElementById('file-import-backup');
+
+    const btnCopySyncCode = document.getElementById('btn-copy-sync-code');
+    const inputSyncCode = document.getElementById('input-sync-code');
+    const btnApplySyncCode = document.getElementById('btn-apply-sync-code');
 
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
@@ -2018,63 +2067,158 @@
 
     tabSyncQr.addEventListener('click', () => {
       tabSyncQr.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabSyncText.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
       tabSyncFile.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
       panelSyncQr.classList.remove('hidden');
+      panelSyncText.classList.add('hidden');
       panelSyncFile.classList.add('hidden');
+    });
+
+    tabSyncText.addEventListener('click', () => {
+      tabSyncText.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      panelSyncText.classList.remove('hidden');
+      panelSyncQr.classList.add('hidden');
+      panelSyncFile.classList.add('hidden');
+      stopCameraScanner();
     });
 
     tabSyncFile.addEventListener('click', () => {
       tabSyncFile.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
       tabSyncQr.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      tabSyncText.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
       panelSyncFile.classList.remove('hidden');
       panelSyncQr.classList.add('hidden');
+      panelSyncText.classList.add('hidden');
       stopCameraScanner();
+    });
+
+    function generateOptimizedQr(days) {
+      qrcodeContainer.innerHTML = '';
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+      
+      const slimMeals = allMeals
+        .filter(m => m.date >= cutoffStr)
+        .map(m => [
+          m.date.replace(/-/g, ''),
+          m.time || '',
+          m.type,
+          m.content,
+          m.preBloodSugar || '',
+          m.postBloodSugar || '',
+          m.carbs || '',
+          m.calories || '',
+          m.carb || ''
+        ]);
+
+      const filteredDaily = {};
+      Object.keys(dailyRecords).forEach(d => {
+        if (d >= cutoffStr) filteredDaily[d] = dailyRecords[d];
+      });
+
+      const syncPayload = {
+        _v: 4,
+        m: slimMeals,
+        d: filteredDaily
+      };
+
+      try {
+        const rawJson = JSON.stringify(syncPayload);
+        // LZ-String圧縮を使用してデータ量を1/4程度に圧縮
+        let qrData = rawJson;
+        if (window.LZString) {
+          qrData = 'LZ:' + LZString.compressToEncodedURIComponent(rawJson);
+        }
+
+        new QRCode(qrcodeContainer, {
+          text: qrData,
+          width: 230,
+          height: 230,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.L
+        });
+        showToast(`直近${days}日分のQRコードを表示しました`);
+      } catch (err) {
+        console.error('QR creation error:', err);
+        showToast('データ量超過のため「LINE/テキスト貼付」をご利用ください');
+      }
+    }
+
+    btnQrDays14.addEventListener('click', () => {
+      qrTargetDays = 14;
+      btnQrDays14.className = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+      btnQrDays30.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
+      generateOptimizedQr(14);
+    });
+
+    btnQrDays30.addEventListener('click', () => {
+      qrTargetDays = 30;
+      btnQrDays30.className = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+      btnQrDays14.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
+      generateOptimizedQr(30);
     });
 
     btnShowQrMode.addEventListener('click', () => {
       stopCameraScanner();
       qrScannerBox.classList.add('hidden');
       qrDisplayBox.classList.remove('hidden');
-      qrcodeContainer.innerHTML = '';
-
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 30);
-      const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
-      
-      const slimMeals = allMeals.filter(m => m.date >= cutoffStr).map(m => ({
-        d: m.date,
-        t: m.time,
-        p: m.type,
-        c: m.content,
-        b1: m.preBloodSugar,
-        b2: m.postBloodSugar,
-        cb: m.carbs,
-        cal: m.calories,
-        cm: m.carb
-      }));
-
-      const syncPayload = {
-        _v: 3,
-        m: slimMeals,
-        d: dailyRecords,
-        dict: userCustomDict
-      };
-
-      try {
-        new QRCode(qrcodeContainer, {
-          text: JSON.stringify(syncPayload),
-          width: 220,
-          height: 220,
-          colorDark: '#0f172a',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.L
-        });
-        showToast('QRコードを表示しました');
-      } catch (err) {
-        console.error(err);
-        showToast('データ量が多いため「ファイル保存」をご利用ください');
-      }
+      generateOptimizedQr(qrTargetDays);
     });
+
+    function applySyncedData(parsed) {
+      if (!parsed || !parsed._v) return false;
+
+      if (parsed._v === 4 && Array.isArray(parsed.m)) {
+        // v4形式の展開
+        const newMeals = parsed.m.map((arr, i) => {
+          const rawDate = String(arr[0]);
+          const formattedDate = rawDate.length === 8 
+            ? `${rawDate.substring(0, 4)}-${rawDate.substring(4, 6)}-${rawDate.substring(6, 8)}`
+            : rawDate;
+
+          return {
+            id: 'sync-' + Date.now() + '-' + i,
+            date: formattedDate,
+            time: arr[1],
+            type: arr[2],
+            content: arr[3],
+            preBloodSugar: arr[4],
+            postBloodSugar: arr[5],
+            carbs: arr[6] !== '' ? Number(arr[6]) : '',
+            calories: arr[7] !== '' ? Number(arr[7]) : '',
+            carb: arr[8],
+            updatedAt: new Date().toISOString()
+          };
+        });
+
+        // 既存データとマージ（同日同時間の重複を避ける）
+        const mergedMap = new Map();
+        allMeals.forEach(m => mergedMap.set(`${m.date}_${m.time}_${m.type}`, m));
+        newMeals.forEach(m => mergedMap.set(`${m.date}_${m.time}_${m.type}`, m));
+        allMeals = Array.from(mergedMap.values());
+
+        if (parsed.d) {
+          dailyRecords = { ...dailyRecords, ...parsed.d };
+        }
+      } else if (parsed.meals && parsed.dailyRecords) {
+        // フルバックアップ形式の展開
+        allMeals = parsed.meals;
+        dailyRecords = parsed.dailyRecords;
+        if (parsed.mealMemory) mealMemory = parsed.mealMemory;
+        if (parsed.userCustomDict) userCustomDict = parsed.userCustomDict;
+      }
+
+      saveData(STORAGE_KEY_MEALS, allMeals);
+      saveData(STORAGE_KEY_DAILY, dailyRecords);
+      saveData(STORAGE_KEY_MEMORY, mealMemory);
+      saveData(STORAGE_KEY_CUSTOM_DICT, userCustomDict);
+      renderApp();
+      return true;
+    }
 
     btnScanQrMode.addEventListener('click', () => {
       qrDisplayBox.classList.add('hidden');
@@ -2092,37 +2236,17 @@
         config,
         (decodedText) => {
           try {
-            const data = JSON.parse(decodedText);
-            if (data && data._v === 3 && data.m) {
+            let jsonString = decodedText;
+            if (decodedText.startsWith('LZ:') && window.LZString) {
+              jsonString = LZString.decompressFromEncodedURIComponent(decodedText.substring(3));
+            }
+            const data = JSON.parse(jsonString);
+            if (applySyncedData(data)) {
               stopCameraScanner();
-              
-              const restoredMeals = data.m.map((sm, i) => ({
-                id: 'sync-' + Date.now() + '-' + i,
-                date: sm.d,
-                time: sm.t,
-                type: sm.p,
-                content: sm.c,
-                preBloodSugar: sm.b1,
-                postBloodSugar: sm.b2,
-                carbs: sm.cb,
-                calories: sm.cal,
-                carb: sm.cm,
-                updatedAt: new Date().toISOString()
-              }));
-
-              allMeals = restoredMeals;
-              if (data.d) dailyRecords = data.d;
-              if (data.dict) userCustomDict = data.dict;
-
-              saveData(STORAGE_KEY_MEALS, allMeals);
-              saveData(STORAGE_KEY_DAILY, dailyRecords);
-              saveData(STORAGE_KEY_CUSTOM_DICT, userCustomDict);
-
-              renderApp();
               syncModal.classList.add('hidden');
               showToast('✨ タブレットに最新データを同期完了しました！');
             } else {
-              showToast('読み取ったQRコードが一致しません');
+              showToast('同期データの形式が一致しません');
             }
           } catch (e) {
             console.error('QR parse error:', e);
@@ -2134,6 +2258,53 @@
         console.error("Camera start error:", err);
         showToast('カメラへのアクセスを許可してください');
       });
+    });
+
+    // LINE/テキスト貼付同期の処理
+    btnCopySyncCode.addEventListener('click', () => {
+      const fullPayload = {
+        _v: 'full',
+        meals: allMeals,
+        dailyRecords: dailyRecords,
+        mealMemory: mealMemory,
+        userCustomDict: userCustomDict
+      };
+      const textToCopy = LZString.compressToBase64(JSON.stringify(fullPayload));
+
+      const tempInput = document.createElement('textarea');
+      tempInput.value = textToCopy;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      showToast('同期コードをコピーしました！LINE等に貼り付けてください');
+    });
+
+    btnApplySyncCode.addEventListener('click', () => {
+      const inputStr = inputSyncCode.value.trim();
+      if (!inputStr) {
+        showToast('同期コードを貼り付けてください');
+        return;
+      }
+
+      try {
+        let jsonStr = inputStr;
+        if (!inputStr.startsWith('{')) {
+          jsonStr = LZString.decompressFromBase64(inputStr);
+        }
+        const data = JSON.parse(jsonStr);
+        if (applySyncedData(data)) {
+          inputSyncCode.value = '';
+          syncModal.classList.add('hidden');
+          showToast('✨ 全データをタブレットに同期しました！');
+        } else {
+          showToast('同期コードが正しくありません');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('コードの復元に失敗しました。正しく貼り付けてください');
+      }
     });
 
     function stopCameraScanner() {
