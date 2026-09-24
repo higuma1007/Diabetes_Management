@@ -14,6 +14,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Chart.js for Doctor Trend Graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- QR Code Generator & Camera Scanner for Direct Tablet Sync -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
     body {
@@ -573,11 +576,61 @@
         </button>
       </div>
 
-      <p class="text-xs text-slate-500 leading-relaxed">
-        スマホで記録した全データ（食事・血糖値・血圧・体重）をファイルにして、タブレットに簡単に移すことができます。
-      </p>
+      <!-- 同期方式タブ -->
+      <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+        <button type="button" id="tab-sync-qr" class="flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-qrcode"></i>
+          <span>カメラでQR直接同期</span>
+        </button>
+        <button type="button" id="tab-sync-file" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-file-arrow-up"></i>
+          <span>ファイル保存 (予備)</span>
+        </button>
+      </div>
 
-      <div class="space-y-2.5">
+      <!-- QRコード同期パネル -->
+      <div id="panel-sync-qr" class="space-y-3">
+        <p class="text-xs text-slate-500 leading-relaxed">
+          GoogleドライブやLINEでのファイル送信は不要です。スマホでQRを表示し、タブレットのカメラでかざすだけで全データが移行します。
+        </p>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="btn-show-qr-mode" class="p-3 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 rounded-2xl flex flex-col items-center justify-center text-center gap-1 transition">
+            <i class="fa-solid fa-qrcode text-emerald-600 text-2xl"></i>
+            <span class="text-xs font-bold text-emerald-900">スマホ側</span>
+            <span class="text-[10px] text-emerald-700">QRコードを表示</span>
+          </button>
+          <button type="button" id="btn-scan-qr-mode" class="p-3 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200 rounded-2xl flex flex-col items-center justify-center text-center gap-1 transition">
+            <i class="fa-solid fa-camera text-indigo-600 text-2xl"></i>
+            <span class="text-xs font-bold text-indigo-900">タブレット側</span>
+            <span class="text-[10px] text-indigo-700">カメラで読み取る</span>
+          </button>
+        </div>
+
+        <!-- スマホ側：QR表示ビュー -->
+        <div id="qr-display-box" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-2">
+          <div class="text-xs font-bold text-slate-700">タブレットのカメラで読み取ってください</div>
+          <div id="qrcode-container" class="flex justify-center p-2 bg-white rounded-xl shadow-xs mx-auto w-fit"></div>
+          <p id="qr-size-note" class="text-[10px] text-slate-400">直近30日分のデータ＋血圧＋マイ学習辞書</p>
+        </div>
+
+        <!-- タブレット側：カメラスキャナービュー -->
+        <div id="qr-scanner-box" class="hidden space-y-2">
+          <div class="relative rounded-2xl overflow-hidden border border-slate-300 bg-black">
+            <div id="qr-reader" class="w-full"></div>
+          </div>
+          <button type="button" id="btn-stop-scanner" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">
+            カメラを終了する
+          </button>
+        </div>
+      </div>
+
+      <!-- 予備：ファイル同期パネル -->
+      <div id="panel-sync-file" class="space-y-2.5 hidden">
+        <p class="text-xs text-slate-500 leading-relaxed">
+          バックアップファイルを手動で保存・復元することもできます。
+        </p>
+
         <!-- バックアップ保存（スマホ側） -->
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
           <div class="flex items-center justify-between mb-1.5">
@@ -586,7 +639,7 @@
               スマホ側でバックアップ
             </span>
           </div>
-          <p class="text-[11px] text-slate-500 mb-2">全データを保存ファイルとしてダウンロードします。保存後、LINEやメールでタブレットに送ってください。</p>
+          <p class="text-[11px] text-slate-500 mb-2">全データを保存ファイルとしてダウンロードします。</p>
           <button type="button" id="btn-download-backup" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-download"></i> バックアップファイルを保存
           </button>
@@ -600,7 +653,7 @@
               タブレット側で復元読み込み
             </span>
           </div>
-          <p class="text-[11px] text-slate-500 mb-2">届いたバックアップファイルを選択すると、タブレット上に全データが復元されます。</p>
+          <p class="text-[11px] text-slate-500 mb-2">届いたバックアップファイルを選択すると復元されます。</p>
           <label class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
             <i class="fa-solid fa-upload"></i> バックアップファイルを選択して復元
             <input type="file" id="file-import-backup" accept=".json" class="hidden">
@@ -1323,8 +1376,8 @@
             },
             scales: {
               y: {
-                min: 50,
-                max: 180,
+                suggestedMin: 50,
+                suggestedMax: 170,
                 grid: { color: '#f1f5f9' },
                 ticks: { stepSize: 20, font: { size: 10 } }
               },
@@ -1340,6 +1393,7 @@
         const postBsData = [];
         let allSpikes = [];
         let maxBsFound = 0;
+        let minBsFound = 999;
 
         dateList.forEach(dStr => {
           const daysMeals = allMeals.filter(m => m.date === dStr);
@@ -1348,10 +1402,15 @@
           const preVals = daysMeals.map(m => Number(m.preBloodSugar)).filter(v => v && !isNaN(v));
           const postVals = daysMeals.map(m => Number(m.postBloodSugar)).filter(v => v && !isNaN(v));
 
-          if (preVals.length > 0) avgPre = Math.round(preVals.reduce((a, b) => a + b, 0) / preVals.length);
+          if (preVals.length > 0) {
+            avgPre = Math.round(preVals.reduce((a, b) => a + b, 0) / preVals.length);
+            minBsFound = Math.min(minBsFound, ...preVals);
+            maxBsFound = Math.max(maxBsFound, ...preVals);
+          }
           if (postVals.length > 0) {
             avgPost = Math.round(postVals.reduce((a, b) => a + b, 0) / postVals.length);
             maxBsFound = Math.max(maxBsFound, ...postVals);
+            minBsFound = Math.min(minBsFound, ...postVals);
           }
 
           daysMeals.forEach(m => {
@@ -1372,6 +1431,11 @@
           chartStatAvgSpike.textContent = '-';
         }
         chartStatMaxBs.textContent = maxBsFound > 0 ? `${maxBsFound} mg/dL` : '-';
+
+        // 血糖値のダイナミックレンジ計算（60台の低血糖から450〜500の高血糖まで突き抜けない設定）
+        const effectiveMin = minBsFound < 999 ? minBsFound : 70;
+        const dynamicYMin = Math.max(30, Math.floor((effectiveMin - 15) / 10) * 10);
+        const dynamicYMax = Math.max(250, Math.ceil((maxBsFound + 30) / 50) * 50);
 
         if (vitalTrendChartInstance) vitalTrendChartInstance.destroy();
 
@@ -1411,14 +1475,22 @@
               legend: {
                 position: 'top',
                 labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } }
+              },
+              tooltip: {
+                callbacks: {
+                  afterTitle: () => '単位: mg/dL'
+                }
               }
             },
             scales: {
               y: {
-                min: 70,
-                max: 240,
+                min: dynamicYMin,
+                max: dynamicYMax,
                 grid: { color: '#f1f5f9' },
-                ticks: { stepSize: 30, font: { size: 10 } }
+                ticks: {
+                  stepSize: dynamicYMax > 300 ? 50 : 30,
+                  font: { size: 10 }
+                }
               },
               x: {
                 grid: { display: false },
@@ -1853,164 +1925,164 @@
           `"${pre}"`,
           `"${post}"`,
           `"${delta}"`,
-          `"${m.carbs !== undefined && m.carbs !== null ? m.carbs : ''}"`,
-          `"${m.calories || ''}"`,
-          `"${(m.carb || '').replace(/"/g, '""')}"`,
-          `"${daily.bpMorningSys || ''}"`,
-          `"${daily.bpMorningDia || ''}"`,
-          `"${daily.bpMorningPulse || ''}"`,
-          `"${daily.bpEveningSys || ''}"`,
-          `"${daily.bpEveningDia || ''}"`,
-          `"${daily.bpEveningPulse || ''}"`,
-          `"${daily.weight || ''}"`,
-          `"${(daily.meds || '').replace(/"/g, '""')}"`,
-          `"${(daily.memo || '').replace(/"/g, '""')}"`
-        ];
-        csv += row.join(',') + '\r\n';
-      });
+    const btnOpenSync = document.getElementById('btn-open-sync');
+    const syncModal = document.getElementById('sync-modal');
+    const btnCloseSync = document.getElementById('btn-close-sync');
+    const btnDownloadBackup = document.getElementById('btn-download-backup');
+    const fileImportBackup = document.getElementById('file-import-backup');
 
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `糖尿病・血圧食事記録_${getTodayString()}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      exportModal.classList.add('hidden');
-      showToast('血圧付きExcel(CSV)ファイルを保存しました');
+    const tabSyncQr = document.getElementById('tab-sync-qr');
+    const tabSyncFile = document.getElementById('tab-sync-file');
+    const panelSyncQr = document.getElementById('panel-sync-qr');
+    const panelSyncFile = document.getElementById('panel-sync-file');
+    const btnShowQrMode = document.getElementById('btn-show-qr-mode');
+    const btnScanQrMode = document.getElementById('btn-scan-qr-mode');
+    const qrDisplayBox = document.getElementById('qr-display-box');
+    const qrScannerBox = document.getElementById('qr-scanner-box');
+    const qrcodeContainer = document.getElementById('qrcode-container');
+    const btnStopScanner = document.getElementById('btn-stop-scanner');
+
+    let html5QrScannerInstance = null;
+
+    tabSyncQr.addEventListener('click', () => {
+      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      panelSyncQr.classList.remove('hidden');
+      panelSyncFile.classList.add('hidden');
     });
 
-    btnPrintPreview.addEventListener('click', () => {
-      const filtered = getFilteredMealsForExport();
-      if (filtered.length === 0) {
-        showToast('出力対象の記録がありません');
-        return;
+    tabSyncFile.addEventListener('click', () => {
+      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      panelSyncFile.classList.remove('hidden');
+      panelSyncQr.classList.add('hidden');
+      stopCameraScanner();
+    });
+
+    // スマホ側：QRコード生成表示
+    btnShowQrMode.addEventListener('click', () => {
+      stopCameraScanner();
+      qrScannerBox.classList.add('hidden');
+      qrDisplayBox.classList.remove('hidden');
+      qrcodeContainer.innerHTML = '';
+
+      // 直近30日分＋血圧＋マイ辞書にスリム化してQRの容量制限（~2.5KB）をクリア
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 30);
+      const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+      
+      const slimMeals = allMeals.filter(m => m.date >= cutoffStr).map(m => ({
+        d: m.date,
+        t: m.time,
+        p: m.type,
+        c: m.content,
+        b1: m.preBloodSugar,
+        b2: m.postBloodSugar,
+        cb: m.carbs,
+        cal: m.calories,
+        cm: m.carb
+      }));
+
+      const syncPayload = {
+        _v: 3,
+        m: slimMeals,
+        d: dailyRecords,
+        dict: userCustomDict
+      };
+
+      try {
+        new QRCode(qrcodeContainer, {
+          text: JSON.stringify(syncPayload),
+          width: 220,
+          height: 220,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.L
+        });
+        showToast('QRコードを表示しました');
+      } catch (err) {
+        console.error(err);
+        showToast('データ量が多いため「ファイル保存」をご利用ください');
+      }
+    });
+
+    // タブレット側：カメラ起動＆スキャン
+    btnScanQrMode.addEventListener('click', () => {
+      qrDisplayBox.classList.add('hidden');
+      qrScannerBox.classList.remove('hidden');
+
+      if (html5QrScannerInstance) {
+        stopCameraScanner();
       }
 
-      const printVitalsBody = document.getElementById('print-vitals-body');
-      const printTbody = document.getElementById('print-table-body');
-      printVitalsBody.innerHTML = '';
-      printTbody.innerHTML = '';
+      html5QrScannerInstance = new Html5Qrcode("qr-reader");
+      const config = { fps: 10, qrbox: { width: 220, height: 220 } };
 
-      const printPeriodLabel = document.getElementById('print-period-label');
-      printPeriodLabel.textContent = `記録期間：${filtered[0].date} 〜 ${filtered[filtered.length - 1].date}`;
+      html5QrScannerInstance.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+          try {
+            const data = JSON.parse(decodedText);
+            if (data && data._v === 3 && data.m) {
+              stopCameraScanner();
+              
+              // 復元処理
+              const restoredMeals = data.m.map((sm, i) => ({
+                id: 'sync-' + Date.now() + '-' + i,
+                date: sm.d,
+                time: sm.t,
+                type: sm.p,
+                content: sm.c,
+                preBloodSugar: sm.b1,
+                postBloodSugar: sm.b2,
+                carbs: sm.cb,
+                calories: sm.cal,
+                carb: sm.cm,
+                updatedAt: new Date().toISOString()
+              }));
 
-      const uniqueDates = Array.from(new Set(filtered.map(m => m.date))).sort();
-      uniqueDates.forEach(dateStr => {
-        const daily = dailyRecords[dateStr] || {};
-        
-        let morningBpStr = '-';
-        if (daily.bpMorningSys && daily.bpMorningDia) {
-          morningBpStr = `<b>${daily.bpMorningSys} / ${daily.bpMorningDia}</b> mmHg`;
-          if (daily.bpMorningPulse) morningBpStr += ` (${daily.bpMorningPulse}拍)`;
+              allMeals = restoredMeals;
+              if (data.d) dailyRecords = data.d;
+              if (data.dict) userCustomDict = data.dict;
+
+              saveData(STORAGE_KEY_MEALS, allMeals);
+              saveData(STORAGE_KEY_DAILY, dailyRecords);
+              saveData(STORAGE_KEY_CUSTOM_DICT, userCustomDict);
+
+              renderApp();
+              syncModal.classList.add('hidden');
+              showToast('✨ タブレットに最新データを同期完了しました！');
+            } else {
+              showToast('読み取ったQRコードが一致しません');
+            }
+          } catch (e) {
+            console.error('QR parse error:', e);
+            showToast('QRデータの解析に失敗しました');
+          }
+        },
+        (errorMessage) => {
+          // 探索中は無視
         }
-
-        let eveningBpStr = '-';
-        if (daily.bpEveningSys && daily.bpEveningDia) {
-          eveningBpStr = `<b>${daily.bpEveningSys} / ${daily.bpEveningDia}</b> mmHg`;
-          if (daily.bpEveningPulse) eveningBpStr += ` (${daily.bpEveningPulse}拍)`;
-        }
-
-        const vTr = document.createElement('tr');
-        vTr.innerHTML = `
-          <td class="border border-slate-400 p-1.5 text-center font-bold">${dateStr}</td>
-          <td class="border border-slate-400 p-1.5 text-center">${morningBpStr}</td>
-          <td class="border border-slate-400 p-1.5 text-center">${eveningBpStr}</td>
-          <td class="border border-slate-400 p-1.5 text-center font-medium">${daily.weight ? daily.weight + ' kg' : '-'}</td>
-          <td class="border border-slate-400 p-1.5">
-            ${daily.meds ? '<span class="font-semibold">[服薬]</span> ' + escapeHtml(daily.meds) + ' ' : ''}
-            ${daily.memo ? '<span class="text-slate-600">(' + escapeHtml(daily.memo) + ')</span>' : ''}
-          </td>
-        `;
-        printVitalsBody.appendChild(vTr);
+      ).catch(err => {
+        console.error("Camera start error:", err);
+        showToast('カメラへのアクセスを許可してください');
       });
-
-      filtered.forEach(m => {
-        const pre = m.preBloodSugar || '';
-        const post = m.postBloodSugar || '';
-        let bsDisplay = '-';
-        if (pre && post) {
-          const diff = Number(post) - Number(pre);
-          const sign = diff >= 0 ? `+${diff}` : `${diff}`;
-          bsDisplay = `<span class="text-[10px]">前:</span>${pre} → <span class="text-[10px]">後:</span><b>${post}</b> <span class="text-[9px] text-slate-500">(Δ${sign})</span>`;
-        } else if (post) {
-          bsDisplay = `<span class="text-[10px]">後:</span><b>${post}</b>`;
-        } else if (pre) {
-          bsDisplay = `<span class="text-[10px]">前:</span><b>${pre}</b>`;
-        }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="border border-slate-400 p-1.5 text-center">${m.date.substring(5)}<br><span class="text-[10px] text-slate-500">${m.time || ''}</span></td>
-          <td class="border border-slate-400 p-1.5 text-center font-bold">${m.type}</td>
-          <td class="border border-slate-400 p-1.5 whitespace-pre-line">${escapeHtml(m.content)}${m.carb ? '<br><span class="text-slate-500 text-[10px]">[' + escapeHtml(m.carb) + ']</span>' : ''}</td>
-          <td class="border border-slate-400 p-1.5 text-center font-bold text-violet-700">${m.carbs !== undefined && m.carbs !== null && m.carbs !== '' ? m.carbs + 'g' : '-'}</td>
-          <td class="border border-slate-400 p-1.5 text-center">${m.calories ? m.calories + 'kcal' : '-'}</td>
-          <td class="border border-slate-400 p-1.5 text-center ${Number(post) >= 180 ? 'text-red-600 font-bold' : ''}">${bsDisplay}</td>
-        `;
-        printTbody.appendChild(tr);
-      });
-
-      exportModal.classList.add('hidden');
-      window.print();
     });
 
-    btnCopyClipboard.addEventListener('click', () => {
-      const filtered = getFilteredMealsForExport();
-      if (filtered.length === 0) {
-        showToast('出力対象の記録がありません');
-        return;
+    function stopCameraScanner() {
+      if (html5QrScannerInstance) {
+        html5QrScannerInstance.stop().then(() => {
+          html5QrScannerInstance.clear();
+          html5QrScannerInstance = null;
+        }).catch(() => {
+          html5QrScannerInstance = null;
+        });
       }
+      qrScannerBox.classList.add('hidden');
+    }
 
-      let text = `【糖尿病 食事・血糖・家庭血圧記録】\n`;
-      let curDate = '';
-
-      filtered.forEach(m => {
-        if (m.date !== curDate) {
-          curDate = m.date;
-          const daily = dailyRecords[curDate] || {};
-          text += `\n■ ${curDate}`;
-          if (daily.bpMorningSys) text += ` [朝血圧:${daily.bpMorningSys}/${daily.bpMorningDia} 脈:${daily.bpMorningPulse || '-'}]`;
-          if (daily.bpEveningSys) text += ` [晩血圧:${daily.bpEveningSys}/${daily.bpEveningDia}]`;
-          if (daily.weight) text += ` (体重:${daily.weight}kg)`;
-          if (daily.meds) text += ` [服薬:${daily.meds}]`;
-          text += `\n`;
-        }
-        text += `・${m.type}(${m.time || '--:--'}): ${m.content}`;
-        if (m.carbs) text += ` [糖質:${m.carbs}g]`;
-        if (m.preBloodSugar && m.postBloodSugar) {
-          const d = Number(m.postBloodSugar) - Number(m.preBloodSugar);
-          text += ` [血糖 前:${m.preBloodSugar}→後:${m.postBloodSugar} (Δ${d >= 0 ? '+' + d : d})]`;
-        } else if (m.postBloodSugar) {
-          text += ` [食後血糖:${m.postBloodSugar}mg/dL]`;
-        } else if (m.preBloodSugar) {
-          text += ` [食前血糖:${m.preBloodSugar}mg/dL]`;
-        }
-        if (m.calories) text += ` [${m.calories}kcal]`;
-        if (m.carb) text += ` (${m.carb})`;
-        text += `\n`;
-      });
-
-      const tempArea = document.createElement('textarea');
-      tempArea.value = text;
-      document.body.appendChild(tempArea);
-      tempArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(tempArea);
-
-      exportModal.classList.add('hidden');
-      showToast('テキストをクリップボードにコピーしました');
-    });
-
-    btnOpenSync.addEventListener('click', () => {
-      syncModal.classList.remove('hidden');
-    });
-
-    btnCloseSync.addEventListener('click', () => {
-      syncModal.classList.add('hidden');
-    });
+    btnStopScanner.addEventListener('click', stopCameraScanner);
 
     btnDownloadBackup.addEventListener('click', () => {
       const backupData = {
@@ -2030,9 +2102,9 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+    btnCloseSync.addEventListener('click', () => {
+      stopCameraScanner();
       syncModal.classList.add('hidden');
-      showToast('バックアップファイルを保存しました');
     });
 
     fileImportBackup.addEventListener('change', (e) => {
