@@ -597,11 +597,27 @@
             <button type="button" id="btn-qr-days-30" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600">直近30日分</button>
           </div>
 
+          <!-- 分割QR切り替えボタン（データ量が多い場合に自動出現） -->
+          <div id="qr-split-controls" class="hidden flex items-center justify-center gap-2 pt-1">
+            <span class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+              <i class="fa-solid fa-layer-group mr-1"></i>30日分大容量: 2枚に分割
+            </span>
+            <div class="flex gap-1">
+              <button type="button" id="btn-qr-part-1" class="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs">1枚目 (1/2)</button>
+              <button type="button" id="btn-qr-part-2" class="px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600">2枚目 (2/2)</button>
+            </div>
+          </div>
+
           <div id="qrcode-container" class="flex justify-center p-3 bg-white rounded-xl shadow-xs mx-auto w-fit"></div>
           <p id="qr-size-note" class="text-[11px] text-slate-500 font-medium">タブレットのカメラで読み取ってください</p>
         </div>
 
         <div id="qr-scanner-box" class="hidden space-y-2">
+          <!-- 読み取り進捗表示バッジ -->
+          <div id="scanner-progress-badge" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold py-1.5 px-3 rounded-xl text-center flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+            <span id="scanner-progress-text">1枚目を読取完了！2枚目をかざしてください</span>
+          </div>
           <div class="relative rounded-2xl overflow-hidden border border-slate-300 bg-black">
             <div id="qr-reader" class="w-full"></div>
           </div>
@@ -1015,6 +1031,17 @@
     const btnPrintPreview = document.getElementById('btn-print-preview');
     const btnCopyClipboard = document.getElementById('btn-copy-clipboard');
 
+    const tabGraphBp = document.getElementById('tab-graph-bp');
+    const tabGraphBs = document.getElementById('tab-graph-bs');
+    const btnGraphRanges = document.querySelectorAll('.btn-graph-range');
+    const chartStatMorningBp = document.getElementById('chart-stat-morning-bp');
+    const chartStatEveningBp = document.getElementById('chart-stat-evening-bp');
+    const chartStatAvgSpike = document.getElementById('chart-stat-avg-spike');
+    const chartStatMaxBs = document.getElementById('chart-stat-max-bs');
+    const btnStopScanner = document.getElementById('btn-stop-scanner');
+    const btnDownloadBackup = document.getElementById('btn-download-backup');
+    const fileImportBackup = document.getElementById('file-import-backup');
+
     const btnOpenSync = document.getElementById('btn-open-sync');
     const syncModal = document.getElementById('sync-modal');
     const btnCloseSync = document.getElementById('btn-close-sync');
@@ -1029,20 +1056,20 @@
     const qrDisplayBox = document.getElementById('qr-display-box');
     const qrScannerBox = document.getElementById('qr-scanner-box');
     const qrcodeContainer = document.getElementById('qrcode-container');
+    const qrSizeNote = document.getElementById('qr-size-note');
+    const qrSplitControls = document.getElementById('qr-split-controls');
+    const btnQrPart1 = document.getElementById('btn-qr-part-1');
+    const btnQrPart2 = document.getElementById('btn-qr-part-2');
+    const scannerProgressBadge = document.getElementById('scanner-progress-badge');
+    const scannerProgressText = document.getElementById('scanner-progress-text');
     const btnQrDays14 = document.getElementById('btn-qr-days-14');
     const btnQrDays30 = document.getElementById('btn-qr-days-30');
     let qrTargetDays = 14;
 
-    const tabGraphBp = document.getElementById('tab-graph-bp');
-    const tabGraphBs = document.getElementById('tab-graph-bs');
-    const btnGraphRanges = document.querySelectorAll('.btn-graph-range');
-    const chartStatMorningBp = document.getElementById('chart-stat-morning-bp');
-    const chartStatEveningBp = document.getElementById('chart-stat-evening-bp');
-    const chartStatAvgSpike = document.getElementById('chart-stat-avg-spike');
-    const chartStatMaxBs = document.getElementById('chart-stat-max-bs');
-    const btnStopScanner = document.getElementById('btn-stop-scanner');
-    const btnDownloadBackup = document.getElementById('btn-download-backup');
-    const fileImportBackup = document.getElementById('file-import-backup');
+    // 分割QR用の一時保持変数
+    let qrSplitDataParts = null;
+    let qrCurrentPartIndex = 0;
+    let scannerReceivedParts = {};
 
     const btnCopySyncCode = document.getElementById('btn-copy-sync-code');
     const inputSyncCode = document.getElementById('input-sync-code');
@@ -1915,19 +1942,19 @@
         const post = m.postBloodSugar || '';
         let delta = '';
         if (pre && post && !isNaN(Number(pre)) && !isNaN(Number(post))) {
-          const d = Number(post) - Number(pre);
-          delta = d >= 0 ? `+${d}` : `${d}`;
+          const diff = Number(post) - Number(pre);
+          delta = diff >= 0 ? `+${diff}` : `${diff}`;
         }
 
         const row = [
           `"${m.date}"`,
           `"${m.time || ''}"`,
-          `"${m.type}"`,
+          `"${m.type || ''}"`,
           `"${(m.content || '').replace(/"/g, '""')}"`,
           `"${pre}"`,
           `"${post}"`,
           `"${delta}"`,
-          `"${m.carbs !== undefined ? m.carbs : ''}"`,
+          `"${m.carbs !== undefined && m.carbs !== null && m.carbs !== '' ? m.carbs : ''}"`,
           `"${m.calories || ''}"`,
           `"${(m.carb || '').replace(/"/g, '""')}"`,
           `"${daily.bpMorningSys || ''}"`,
@@ -1951,109 +1978,136 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      showToast('Excel (CSV) をダウンロードしました');
-      exportModal.classList.add('hidden');
+      showToast('CSVファイルを書き出しました');
     });
 
     btnPrintPreview.addEventListener('click', () => {
+      exportModal.classList.add('hidden');
       const filtered = getFilteredMealsForExport();
-      const range = exportRange.value;
-      const periodLabel = document.getElementById('print-period-label');
-      periodLabel.textContent = `出力期間: 直近 ${range === 'all' ? '全期間' : range + '日間'} (出力日: ${getTodayString()})`;
+      const printPeriodLabel = document.getElementById('print-period-label');
+      const printTableBody = document.getElementById('print-table-body');
+      const printVitalsBody = document.getElementById('print-vitals-body');
 
-      // 印刷用バイタル一覧表の生成
-      const vitalsBody = document.getElementById('print-vitals-body');
-      vitalsBody.innerHTML = '';
-      const dates = [...new Set(filtered.map(m => m.date))].sort().reverse();
-
-      if (dates.length === 0) {
-        dates.push(selectedDate);
+      if (filtered.length === 0) {
+        showToast('印刷する記録がありません');
+        return;
       }
 
+      const dates = [...new Set(filtered.map(m => m.date))].sort();
+      printPeriodLabel.textContent = `記録期間：${dates[0]} 〜 ${dates[dates.length - 1]}`;
+
+      printVitalsBody.innerHTML = '';
       dates.forEach(dStr => {
         const d = dailyRecords[dStr] || {};
         const tr = document.createElement('tr');
         const mBp = (d.bpMorningSys && d.bpMorningDia) ? `${d.bpMorningSys}/${d.bpMorningDia} (${d.bpMorningPulse || '-'})` : '-';
         const eBp = (d.bpEveningSys && d.bpEveningDia) ? `${d.bpEveningSys}/${d.bpEveningDia} (${d.bpEveningPulse || '-'})` : '-';
-        const weight = d.weight ? `${d.weight} kg` : '-';
-        const memo = [d.meds, d.memo].filter(Boolean).join(' / ') || '-';
-
         tr.innerHTML = `
-          <td class="border border-slate-400 p-1.5 text-center font-bold">${escapeHtml(dStr)}</td>
-          <td class="border border-slate-400 p-1.5 text-center font-medium">${escapeHtml(mBp)}</td>
-          <td class="border border-slate-400 p-1.5 text-center font-medium">${escapeHtml(eBp)}</td>
-          <td class="border border-slate-400 p-1.5 text-center">${escapeHtml(weight)}</td>
-          <td class="border border-slate-400 p-1.5 text-left">${escapeHtml(memo)}</td>
+          <td class="border border-slate-400 p-1.5 text-center">${dStr}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-semibold">${mBp}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-semibold">${eBp}</td>
+          <td class="border border-slate-400 p-1.5 text-center">${d.weight ? d.weight + ' kg' : '-'}</td>
+          <td class="border border-slate-400 p-1.5">${escapeHtml([d.meds, d.memo].filter(Boolean).join(' / ') || '-')}</td>
         `;
-        vitalsBody.appendChild(tr);
+        printVitalsBody.appendChild(tr);
       });
 
-      // 印刷用食事一覧表の生成
-      const printBody = document.getElementById('print-table-body');
-      printBody.innerHTML = '';
+      printTableBody.innerHTML = '';
       filtered.forEach(m => {
         const tr = document.createElement('tr');
-        let bsDisplay = '-';
-        if (m.preBloodSugar || m.postBloodSugar) {
-          const pre = m.preBloodSugar ? `前:${m.preBloodSugar}` : '';
-          const post = m.postBloodSugar ? `後:${m.postBloodSugar}` : '';
-          let diffStr = '';
-          if (m.preBloodSugar && m.postBloodSugar) {
-            const diff = Number(m.postBloodSugar) - Number(m.preBloodSugar);
-            diffStr = ` (Δ${diff >= 0 ? '+' : ''}${diff})`;
-          }
-          bsDisplay = [pre, post].filter(Boolean).join(' → ') + diffStr;
+        let bsStr = '-';
+        if (m.preBloodSugar && m.postBloodSugar) {
+          const diff = Number(m.postBloodSugar) - Number(m.preBloodSugar);
+          const sign = diff >= 0 ? `+${diff}` : `${diff}`;
+          bsStr = `${m.preBloodSugar} ➔ ${m.postBloodSugar} (Δ${sign})`;
+        } else if (m.preBloodSugar) {
+          bsStr = `食前: ${m.preBloodSugar}`;
+        } else if (m.postBloodSugar) {
+          bsStr = `食後: ${m.postBloodSugar}`;
         }
 
         tr.innerHTML = `
-          <td class="border border-slate-400 p-1.5 text-center">${escapeHtml(m.date)}<br><span class="text-[10px] text-slate-500">${escapeHtml(m.time || '')}</span></td>
+          <td class="border border-slate-400 p-1.5 text-center font-medium">${m.date.substring(5)} ${m.time || ''}</td>
           <td class="border border-slate-400 p-1.5 text-center font-bold">${escapeHtml(m.type)}</td>
-          <td class="border border-slate-400 p-1.5 text-left font-medium">
-            ${escapeHtml(m.content)}
-            ${m.carb ? `<br><span class="text-[10px] text-slate-500">工夫: ${escapeHtml(m.carb)}</span>` : ''}
+          <td class="border border-slate-400 p-1.5">
+            <div class="font-medium">${escapeHtml(m.content)}</div>
+            ${m.carb ? `<div class="text-[10px] text-slate-600">※ ${escapeHtml(m.carb)}</div>` : ''}
           </td>
-          <td class="border border-slate-400 p-1.5 text-center font-bold text-violet-800">${m.carbs !== undefined ? m.carbs + 'g' : '-'}</td>
-          <td class="border border-slate-400 p-1.5 text-center text-slate-600">${m.calories ? m.calories + 'kcal' : '-'}</td>
-          <td class="border border-slate-400 p-1.5 text-center font-bold text-rose-700">${escapeHtml(bsDisplay)}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-bold text-violet-700">${m.carbs !== '' && m.carbs !== undefined && m.carbs !== null ? m.carbs + 'g' : '-'}</td>
+          <td class="border border-slate-400 p-1.5 text-center">${m.calories ? m.calories + ' kcal' : '-'}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-bold ${m.postBloodSugar && Number(m.postBloodSugar) >= 180 ? 'text-rose-600' : ''}">${bsStr}</td>
         `;
-        printBody.appendChild(tr);
+        printTableBody.appendChild(tr);
       });
 
-      exportModal.classList.add('hidden');
-      setTimeout(() => {
-        window.print();
-      }, 200);
+      window.print();
     });
 
     btnCopyClipboard.addEventListener('click', () => {
       const filtered = getFilteredMealsForExport();
       if (filtered.length === 0) {
-        showToast('コピー対象の記録がありません');
+        showToast('コピーする記録がありません');
         return;
       }
 
-      let text = `【糖尿病・食事＆血圧記録レポート】\n`;
-      filtered.forEach(m => {
-        const daily = dailyRecords[m.date] || {};
-        let bpStr = '';
-        if (daily.bpMorningSys) bpStr += ` [朝血圧:${daily.bpMorningSys}/${daily.bpMorningDia}]`;
-        text += `\n■ ${m.date} ${m.time || ''} [${m.type}]${bpStr}\n`;
-        text += `・食事: ${m.content}\n`;
-        if (m.carbs) text += `・糖質: ${m.carbs}g / カロリー: ${m.calories || '-'}kcal\n`;
-        if (m.preBloodSugar || m.postBloodSugar) {
-          text += `・リブレ血糖: 食前 ${m.preBloodSugar || '-'} → 食後 ${m.postBloodSugar || '-'}\n`;
+      let text = `【糖尿病 食事・血糖・血圧記録】\n`;
+      const dates = [...new Set(filtered.map(m => m.date))].sort();
+      dates.forEach(dStr => {
+        text += `\n■ 日付: ${dStr}\n`;
+        const d = dailyRecords[dStr];
+        if (d) {
+          if (d.bpMorningSys || d.bpEveningSys) {
+            text += `  ・血圧: 朝[${d.bpMorningSys || '-'}/${d.bpMorningDia || '-'}] 晩[${d.bpEveningSys || '-'}/${d.bpEveningDia || '-'}]\n`;
+          }
+          if (d.weight) text += `  ・体重: ${d.weight}kg\n`;
+          if (d.meds || d.memo) text += `  ・メモ: ${[d.meds, d.memo].filter(Boolean).join('、')}\n`;
         }
+        const mealsToday = filtered.filter(m => m.date === dStr);
+        mealsToday.forEach(m => {
+          let bs = '';
+          if (m.preBloodSugar || m.postBloodSugar) {
+            bs = ` (血糖 食前:${m.preBloodSugar || '-'} ➔ 食後:${m.postBloodSugar || '-'})`;
+          }
+          text += `  ・[${m.type}] ${m.time || ''} : ${m.content} [糖質:${m.carbs || '-'}g]${bs}\n`;
+        });
       });
 
-      const tempInput = document.createElement('textarea');
-      tempInput.value = text;
-      document.body.appendChild(tempInput);
-      tempInput.select();
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
       document.execCommand('copy');
-      document.body.removeChild(tempInput);
+      document.body.removeChild(temp);
+      showToast('テキストをコピーしました！');
+    });
 
-      showToast('テキストをクリップボードにコピーしました！');
-      exportModal.classList.add('hidden');
+    tabSyncQr.addEventListener('click', () => {
+      panelSyncQr.classList.remove('hidden');
+      panelSyncText.classList.add('hidden');
+      panelSyncFile.classList.add('hidden');
+      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabSyncText.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+    });
+
+    tabSyncText.addEventListener('click', () => {
+      panelSyncQr.classList.add('hidden');
+      panelSyncText.classList.remove('hidden');
+      panelSyncFile.classList.add('hidden');
+      stopCameraScanner();
+      tabSyncText.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+    });
+
+    tabSyncFile.addEventListener('click', () => {
+      panelSyncQr.classList.add('hidden');
+      panelSyncText.classList.add('hidden');
+      panelSyncFile.classList.remove('hidden');
+      stopCameraScanner();
+      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      tabSyncText.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
     });
 
     btnOpenSync.addEventListener('click', () => {
@@ -2065,88 +2119,134 @@
       syncModal.classList.add('hidden');
     });
 
-    tabSyncQr.addEventListener('click', () => {
-      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
-      tabSyncText.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-      panelSyncQr.classList.remove('hidden');
-      panelSyncText.classList.add('hidden');
-      panelSyncFile.classList.add('hidden');
-    });
-
-    tabSyncText.addEventListener('click', () => {
-      tabSyncText.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
-      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-      panelSyncText.classList.remove('hidden');
-      panelSyncQr.classList.add('hidden');
-      panelSyncFile.classList.add('hidden');
-      stopCameraScanner();
-    });
-
-    tabSyncFile.addEventListener('click', () => {
-      tabSyncFile.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
-      tabSyncQr.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-      tabSyncText.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
-      panelSyncFile.classList.remove('hidden');
-      panelSyncQr.classList.add('hidden');
-      panelSyncText.classList.add('hidden');
-      stopCameraScanner();
-    });
-
-    function generateOptimizedQr(days) {
-      qrcodeContainer.innerHTML = '';
+    function buildUltraCompactPayload(days) {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
       const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
       
+      const typeMap = { '朝食': 1, '昼食': 2, '夕食': 3, '間食・夜食': 4 };
       const slimMeals = allMeals
         .filter(m => m.date >= cutoffStr)
         .map(m => [
           m.date.replace(/-/g, ''),
-          m.time || '',
-          m.type,
-          m.content,
+          m.time ? m.time.replace(':', '') : '',
+          typeMap[m.type] || 0,
+          m.content || '',
           m.preBloodSugar || '',
           m.postBloodSugar || '',
-          m.carbs || '',
+          m.carbs !== '' && m.carbs !== undefined && m.carbs !== null ? m.carbs : '',
           m.calories || '',
           m.carb || ''
         ]);
 
-      const filteredDaily = {};
+      // 日別バイタルの超軽量化（プロパティ名を排除し配列化）
+      const compactDaily = {};
       Object.keys(dailyRecords).forEach(d => {
-        if (d >= cutoffStr) filteredDaily[d] = dailyRecords[d];
+        if (d >= cutoffStr) {
+          const rec = dailyRecords[d];
+          const dKey = d.replace(/-/g, '');
+          compactDaily[dKey] = [
+            rec.bpMorningSys || '',
+            rec.bpMorningDia || '',
+            rec.bpMorningPulse || '',
+            rec.bpEveningSys || '',
+            rec.bpEveningDia || '',
+            rec.bpEveningPulse || '',
+            rec.weight || '',
+            rec.meds || '',
+            rec.memo || ''
+          ];
+        }
       });
 
-      const syncPayload = {
-        _v: 4,
+      return {
+        _v: 5,
         m: slimMeals,
-        d: filteredDaily
+        d: compactDaily
       };
+    }
 
-      try {
-        const rawJson = JSON.stringify(syncPayload);
-        // LZ-String圧縮を使用してデータ量を1/4程度に圧縮
-        let qrData = rawJson;
-        if (window.LZString) {
-          qrData = 'LZ:' + LZString.compressToEncodedURIComponent(rawJson);
+    function renderQrCodeGraphic(text) {
+      qrcodeContainer.innerHTML = '';
+      new QRCode(qrcodeContainer, {
+        text: text,
+        width: 230,
+        height: 230,
+        colorDark: '#0f172a',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.L
+      });
+    }
+
+    function generateOptimizedQr(days) {
+      qrSplitControls.classList.add('hidden');
+      qrSplitDataParts = null;
+      qrCurrentPartIndex = 0;
+
+      const payload = buildUltraCompactPayload(days);
+      const rawJson = JSON.stringify(payload);
+      const compressed = LZString.compressToBase64(rawJson);
+
+      // QRコード1枚で安全に表示・読取可能な文字数（約800文字以下）
+      if (compressed.length <= 800) {
+        try {
+          renderQrCodeGraphic('Q1:' + compressed);
+          qrSizeNote.textContent = `直近${days}日分（1枚で読み取り完了）`;
+          showToast(`直近${days}日分のQRコードを表示しました`);
+        } catch (err) {
+          console.error(err);
+          setupSplitQrCodes(compressed, days);
         }
-
-        new QRCode(qrcodeContainer, {
-          text: qrData,
-          width: 230,
-          height: 230,
-          colorDark: '#0f172a',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.L
-        });
-        showToast(`直近${days}日分のQRコードを表示しました`);
-      } catch (err) {
-        console.error('QR creation error:', err);
-        showToast('データ量超過のため「LINE/テキスト貼付」をご利用ください');
+      } else {
+        // 800文字を超える場合は確実に読み取れるよう自動2分割
+        setupSplitQrCodes(compressed, days);
       }
     }
+
+    function setupSplitQrCodes(compressed, days) {
+      const half = Math.ceil(compressed.length / 2);
+      const part1 = compressed.substring(0, half);
+      const part2 = compressed.substring(half);
+
+      qrSplitDataParts = [
+        `SP:1:2:${part1}`,
+        `SP:2:2:${part2}`
+      ];
+      qrCurrentPartIndex = 0;
+
+      qrSplitControls.classList.remove('hidden');
+      setSplitPartButtonState(0);
+      renderQrCodeGraphic(qrSplitDataParts[0]);
+
+      qrSizeNote.innerHTML = `<span class="text-amber-700 font-bold">【1枚目 / 全2枚】</span> タブレットにかざしてください`;
+      showToast(`30日分のため2枚に分割表示しました（1枚目を表示中）`);
+    }
+
+    function setSplitPartButtonState(index) {
+      if (index === 0) {
+        btnQrPart1.className = 'px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+        btnQrPart2.className = 'px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
+      } else {
+        btnQrPart2.className = 'px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+        btnQrPart1.className = 'px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
+      }
+    }
+
+    btnQrPart1.addEventListener('click', () => {
+      if (!qrSplitDataParts) return;
+      qrCurrentPartIndex = 0;
+      setSplitPartButtonState(0);
+      renderQrCodeGraphic(qrSplitDataParts[0]);
+      qrSizeNote.innerHTML = `<span class="text-amber-700 font-bold">【1枚目 / 全2枚】</span> タブレットにかざしてください`;
+    });
+
+    btnQrPart2.addEventListener('click', () => {
+      if (!qrSplitDataParts) return;
+      qrCurrentPartIndex = 1;
+      setSplitPartButtonState(1);
+      renderQrCodeGraphic(qrSplitDataParts[1]);
+      qrSizeNote.innerHTML = `<span class="text-emerald-700 font-bold">【2枚目 / 全2枚】</span> 続けてタブレットにかざしてください`;
+    });
 
     btnQrDays14.addEventListener('click', () => {
       qrTargetDays = 14;
@@ -2172,8 +2272,64 @@
     function applySyncedData(parsed) {
       if (!parsed || !parsed._v) return false;
 
-      if (parsed._v === 4 && Array.isArray(parsed.m)) {
-        // v4形式の展開
+      // v5 超軽量形式の展開
+      if (parsed._v === 5 && Array.isArray(parsed.m)) {
+        const typeReverse = { 1: '朝食', 2: '昼食', 3: '夕食', 4: '間食・夜食' };
+        const newMeals = parsed.m.map((arr, i) => {
+          const rawDate = String(arr[0]);
+          const formattedDate = rawDate.length === 8 
+            ? `${rawDate.substring(0, 4)}-${rawDate.substring(4, 6)}-${rawDate.substring(6, 8)}`
+            : rawDate;
+
+          let formattedTime = String(arr[1] || '');
+          if (formattedTime.length === 4) {
+            formattedTime = `${formattedTime.substring(0, 2)}:${formattedTime.substring(2, 4)}`;
+          }
+
+          return {
+            id: 'sync-' + Date.now() + '-' + i,
+            date: formattedDate,
+            time: formattedTime,
+            type: typeReverse[arr[2]] || '朝食',
+            content: arr[3],
+            preBloodSugar: arr[4],
+            postBloodSugar: arr[5],
+            carbs: arr[6] !== '' ? Number(arr[6]) : '',
+            calories: arr[7] !== '' ? Number(arr[7]) : '',
+            carb: arr[8],
+            updatedAt: new Date().toISOString()
+          };
+        });
+
+        // 既存データとマージ
+        const mergedMap = new Map();
+        allMeals.forEach(m => mergedMap.set(`${m.date}_${m.time}_${m.type}`, m));
+        newMeals.forEach(m => mergedMap.set(`${m.date}_${m.time}_${m.type}`, m));
+        allMeals = Array.from(mergedMap.values());
+
+        // 日別バイタルの展開・マージ
+        if (parsed.d) {
+          Object.keys(parsed.d).forEach(dKey => {
+            const row = parsed.d[dKey];
+            const formattedDate = dKey.length === 8
+              ? `${dKey.substring(0, 4)}-${dKey.substring(4, 6)}-${dKey.substring(6, 8)}`
+              : dKey;
+
+            dailyRecords[formattedDate] = {
+              bpMorningSys: row[0] || '',
+              bpMorningDia: row[1] || '',
+              bpMorningPulse: row[2] || '',
+              bpEveningSys: row[3] || '',
+              bpEveningDia: row[4] || '',
+              bpEveningPulse: row[5] || '',
+              weight: row[6] || '',
+              meds: row[7] || '',
+              memo: row[8] || ''
+            };
+          });
+        }
+      } else if (parsed._v === 4 && Array.isArray(parsed.m)) {
+        // v4 形式の互換展開
         const newMeals = parsed.m.map((arr, i) => {
           const rawDate = String(arr[0]);
           const formattedDate = rawDate.length === 8 
@@ -2195,7 +2351,6 @@
           };
         });
 
-        // 既存データとマージ（同日同時間の重複を避ける）
         const mergedMap = new Map();
         allMeals.forEach(m => mergedMap.set(`${m.date}_${m.time}_${m.type}`, m));
         newMeals.forEach(m => mergedMap.set(`${m.date}_${m.time}_${m.type}`, m));
@@ -2223,6 +2378,8 @@
     btnScanQrMode.addEventListener('click', () => {
       qrDisplayBox.classList.add('hidden');
       qrScannerBox.classList.remove('hidden');
+      scannerReceivedParts = {};
+      scannerProgressBadge.classList.add('hidden');
 
       if (html5QrScannerInstance) {
         stopCameraScanner();
@@ -2236,21 +2393,68 @@
         config,
         (decodedText) => {
           try {
-            let jsonString = decodedText;
-            if (decodedText.startsWith('LZ:') && window.LZString) {
-              jsonString = LZString.decompressFromEncodedURIComponent(decodedText.substring(3));
+            // 単一QRコード（Q1:）の場合
+            if (decodedText.startsWith('Q1:')) {
+              const base64Data = decodedText.substring(3);
+              const jsonString = LZString.decompressFromBase64(base64Data);
+              const data = JSON.parse(jsonString);
+              if (applySyncedData(data)) {
+                stopCameraScanner();
+                syncModal.classList.add('hidden');
+                showToast('✨ タブレットに最新データを同期完了しました！');
+              }
+              return;
             }
-            const data = JSON.parse(jsonString);
+
+            // 分割QRコード（SP:part:total:data）の場合
+            if (decodedText.startsWith('SP:')) {
+              const parts = decodedText.split(':');
+              const curPart = parts[1];
+              const totalParts = parts[2];
+              const chunkData = parts.slice(3).join(':');
+
+              scannerReceivedParts[curPart] = chunkData;
+
+              if (Object.keys(scannerReceivedParts).length < Number(totalParts)) {
+                // 1枚目読取完了時
+                scannerProgressBadge.classList.remove('hidden');
+                scannerProgressText.textContent = `1枚目を読取完了！続けて2枚目をかざしてください`;
+                showToast(`1枚目を読取完了！2枚目をかざしてください`);
+              } else {
+                // 2枚そろった時（合体）
+                const fullCompressed = scannerReceivedParts['1'] + scannerReceivedParts['2'];
+                const jsonString = LZString.decompressFromBase64(fullCompressed);
+                const data = JSON.parse(jsonString);
+                if (applySyncedData(data)) {
+                  stopCameraScanner();
+                  syncModal.classList.add('hidden');
+                  showToast('✨ 30日分のデータをタブレットに同期完了しました！');
+                }
+              }
+              return;
+            }
+
+            // 旧形式 LZ: の後方互換
+            if (decodedText.startsWith('LZ:')) {
+              const jsonString = LZString.decompressFromEncodedURIComponent(decodedText.substring(3));
+              const data = JSON.parse(jsonString);
+              if (applySyncedData(data)) {
+                stopCameraScanner();
+                syncModal.classList.add('hidden');
+                showToast('✨ タブレットに最新データを同期完了しました！');
+              }
+              return;
+            }
+
+            // 通常の直接JSON
+            const data = JSON.parse(decodedText);
             if (applySyncedData(data)) {
               stopCameraScanner();
               syncModal.classList.add('hidden');
               showToast('✨ タブレットに最新データを同期完了しました！');
-            } else {
-              showToast('同期データの形式が一致しません');
             }
           } catch (e) {
             console.error('QR parse error:', e);
-            showToast('QRデータの解析に失敗しました');
           }
         },
         () => {}
