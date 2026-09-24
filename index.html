@@ -68,9 +68,9 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button id="btn-open-sync" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 shadow-xs" title="スマホとタブレットのデータ引継ぎ">
-          <i class="fa-solid fa-arrows-rotate text-emerald-600"></i>
-          <span class="hidden sm:inline">端末引継ぎ</span>
+        <button id="btn-open-sync" class="text-xs font-semibold px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center gap-1.5 shadow-xs" title="スマホとタブレットのQR直接同期">
+          <i class="fa-solid fa-qrcode text-emerald-600"></i>
+          <span>QR同期</span>
         </button>
         <button id="btn-open-export" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 shadow-xs">
           <i class="fa-solid fa-file-export text-slate-500"></i>
@@ -101,6 +101,7 @@
       </button>
     </section>
 
+    <!-- 4大統計サマリー -->
     <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
       <div class="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs">
         <div class="flex items-center justify-between text-slate-500 text-xs">
@@ -146,7 +147,6 @@
       </div>
     </section>
 
-    <!-- 医師・自己管理用トレンドグラフセクション -->
     <section class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 space-y-3">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
         <div class="flex items-center gap-2">
@@ -158,11 +158,10 @@
               <span>バイタル推移グラフ</span>
               <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">医師提示用</span>
             </h3>
-            <p class="text-[11px] text-slate-400">朝晩の家庭血圧とリブレ食前食後スパイクを可視化</p>
+            <p class="text-[11px] text-slate-400">低血糖(60)〜高血糖スパイク(450+)・朝晩血圧に対応</p>
           </div>
         </div>
 
-        <!-- グラフ切り替えタブ＆期間セレクタ -->
         <div class="flex items-center justify-between sm:justify-end gap-2">
           <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
             <button type="button" id="tab-graph-bp" class="px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition">血圧推移</button>
@@ -177,7 +176,7 @@
         </div>
       </div>
 
-      <!-- 統計インサイトバー（お医者さんが一番見たいサマリー） -->
+      <!-- 統計インサイトバー -->
       <div id="graph-summary-bar" class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs">
         <div>
           <span class="text-[10px] text-slate-400 block">期間中 朝平均血圧</span>
@@ -214,9 +213,7 @@
       </summary>
       
       <div class="p-4 space-y-3.5 bg-white">
-        <!-- 血圧入力エリア（朝・晩） -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-red-50/40 p-3 rounded-2xl border border-red-100/70">
-          <!-- 朝の血圧 -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -231,7 +228,6 @@
             </div>
           </div>
 
-          <!-- 晩の血圧 -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -247,7 +243,6 @@
           </div>
         </div>
 
-        <!-- 体重・服薬・体調 -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="text-xs font-medium text-slate-600 block mb-1">今朝の体重 (kg)</label>
@@ -273,9 +268,8 @@
         <span class="text-xs text-slate-400">タップして詳細・編集</span>
       </div>
 
-      <!-- 食事カードコンテナ -->
       <div id="meals-container" class="space-y-2.5">
-        <!-- JSで動的レンダリング -->
+        <!-- 動的描画 -->
       </div>
     </section>
 
@@ -285,7 +279,6 @@
         <p class="text-xs text-slate-500 mt-1" id="print-period-label">記録期間：--</p>
       </div>
 
-      <!-- 病院提出用 日別血圧・バイタル一覧表 -->
       <div class="mb-4">
         <h3 class="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
           <i class="fa-solid fa-heart-pulse text-red-600"></i> 【日別 家庭血圧＆バイタル記録】
@@ -300,13 +293,10 @@
               <th class="border border-slate-400 p-1.5 text-left">服薬・体調メモ</th>
             </tr>
           </thead>
-          <tbody id="print-vitals-body">
-            <!-- JSで動的挿入 -->
-          </tbody>
+          <tbody id="print-vitals-body"></tbody>
         </table>
       </div>
 
-      <!-- 食事・リブレ血糖記録表 -->
       <div>
         <h3 class="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
           <i class="fa-solid fa-utensils text-emerald-600"></i> 【食事内容・リブレ血糖値・糖質量】
@@ -322,9 +312,7 @@
               <th class="border border-slate-400 p-2 text-center w-28">リブレ血糖値</th>
             </tr>
           </thead>
-          <tbody id="print-table-body">
-            <!-- JSで印刷行を動的に挿入 -->
-          </tbody>
+          <tbody id="print-table-body"></tbody>
         </table>
       </div>
     </div>
@@ -380,7 +368,6 @@
   <div id="meal-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity opacity-0">
     <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
       
-      <!-- モーダルヘッダー -->
       <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
         <h3 id="modal-title" class="text-base font-bold text-slate-800 flex items-center gap-2">
           <i class="fa-solid fa-plus text-emerald-600"></i> 食事を記録
@@ -390,11 +377,9 @@
         </button>
       </div>
 
-      <!-- モーダル本文 -->
       <div class="p-5 space-y-4 overflow-y-auto flex-1">
         <input type="hidden" id="editing-meal-id">
 
-        <!-- 食事区分セレクター -->
         <div>
           <label class="text-xs font-semibold text-slate-600 mb-1.5 block">食事の区分</label>
           <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-xl">
@@ -405,7 +390,6 @@
           </div>
         </div>
 
-        <!-- 食べた時間 & 食前血糖値 -->
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-xs font-semibold text-slate-600 mb-1 block">食べた時間</label>
@@ -440,32 +424,27 @@
               <i class="fa-solid fa-rotate-left"></i>
             </button>
           </div>
-          <p class="text-[10px] text-rose-600/80 mt-1">※食事直後は空欄で保存し、後からカードのボタンから1タップで記録できます。</p>
         </div>
 
         <!-- 食べたもの入力欄と音声入力 -->
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="text-xs font-semibold text-slate-600">食べたもの (品目・分量)</label>
+            <label class="text-xs font-semibold text-slate-600">食べたもの (品目・分量・カンマ区切りOK)</label>
             <button type="button" id="btn-voice-input" class="text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1 transition">
               <i class="fa-solid fa-microphone text-emerald-600"></i>
               <span id="voice-btn-text">音声で入力</span>
             </button>
           </div>
-          <textarea id="input-meal-content" rows="3" placeholder="例: かつ丼、味噌汁、サラダ" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed"></textarea>
+          <textarea id="input-meal-content" rows="3" placeholder="例: セイコーマートの豚丼、クノールのポタージュスープ" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed"></textarea>
 
-          <!-- 過去に食べたものの自動記憶チップ -->
           <div id="history-chips-container" class="mt-2 hidden">
             <p class="text-[11px] text-slate-400 mb-1 flex items-center gap-1">
               <i class="fa-solid fa-clock-rotate-left text-[10px]"></i> 過去の記録からワンタップ呼出:
             </p>
-            <div id="history-chips-list" class="flex flex-wrap gap-1.5">
-              <!-- JSで動的生成 -->
-            </div>
+            <div id="history-chips-list" class="flex flex-wrap gap-1.5"></div>
           </div>
         </div>
 
-        <!-- 自動計算ボタン -->
         <div class="bg-violet-50/70 p-3 rounded-2xl border border-violet-100 flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-violet-900 flex items-center gap-1.5">
@@ -481,7 +460,6 @@
           </div>
         </div>
 
-        <!-- 糖質・カロリー数値 -->
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-xs font-semibold text-violet-900 mb-1 block">推定糖質量 (g)</label>
@@ -505,7 +483,6 @@
         </div>
       </div>
 
-      <!-- モーダルフッター -->
       <div class="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50">
         <button type="button" id="btn-delete-meal" class="text-xs font-bold text-rose-600 hover:text-rose-700 py-2 px-3 rounded-xl hover:bg-rose-50 transition hidden">
           <i class="fa-solid fa-trash-can mr-1"></i> 削除
@@ -569,7 +546,7 @@
     <div class="bg-white rounded-3xl w-full max-w-md p-5 shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-arrows-rotate text-emerald-600"></i> 端末間データ引継ぎ
+          <i class="fa-solid fa-arrows-rotate text-emerald-600"></i> 端末間データ同期
         </h3>
         <button id="btn-close-sync" class="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center">
           <i class="fa-solid fa-xmark"></i>
@@ -591,7 +568,7 @@
       <!-- QRコード同期パネル -->
       <div id="panel-sync-qr" class="space-y-3">
         <p class="text-xs text-slate-500 leading-relaxed">
-          GoogleドライブやLINEでのファイル送信は不要です。スマホでQRを表示し、タブレットのカメラでかざすだけで全データが移行します。
+          Googleドライブ不要。スマホでQRを表示し、タブレットのカメラでかざすだけで全データが同期します。
         </p>
 
         <div class="grid grid-cols-2 gap-2">
@@ -607,14 +584,12 @@
           </button>
         </div>
 
-        <!-- スマホ側：QR表示ビュー -->
         <div id="qr-display-box" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-2">
           <div class="text-xs font-bold text-slate-700">タブレットのカメラで読み取ってください</div>
           <div id="qrcode-container" class="flex justify-center p-2 bg-white rounded-xl shadow-xs mx-auto w-fit"></div>
           <p id="qr-size-note" class="text-[10px] text-slate-400">直近30日分のデータ＋血圧＋マイ学習辞書</p>
         </div>
 
-        <!-- タブレット側：カメラスキャナービュー -->
         <div id="qr-scanner-box" class="hidden space-y-2">
           <div class="relative rounded-2xl overflow-hidden border border-slate-300 bg-black">
             <div id="qr-reader" class="w-full"></div>
@@ -625,34 +600,27 @@
         </div>
       </div>
 
-      <!-- 予備：ファイル同期パネル -->
       <div id="panel-sync-file" class="space-y-2.5 hidden">
         <p class="text-xs text-slate-500 leading-relaxed">
           バックアップファイルを手動で保存・復元することもできます。
         </p>
 
-        <!-- バックアップ保存（スマホ側） -->
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">1</span>
-              スマホ側でバックアップ
-            </span>
-          </div>
+          <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-1">
+            <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">1</span>
+            スマホ側でバックアップ
+          </span>
           <p class="text-[11px] text-slate-500 mb-2">全データを保存ファイルとしてダウンロードします。</p>
           <button type="button" id="btn-download-backup" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-download"></i> バックアップファイルを保存
           </button>
         </div>
 
-        <!-- 復元読み込み（タブレット側） -->
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold">2</span>
-              タブレット側で復元読み込み
-            </span>
-          </div>
+          <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-1">
+            <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold">2</span>
+            タブレット側で復元読み込み
+          </span>
           <p class="text-[11px] text-slate-500 mb-2">届いたバックアップファイルを選択すると復元されます。</p>
           <label class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
             <i class="fa-solid fa-upload"></i> バックアップファイルを選択して復元
@@ -677,7 +645,6 @@
 
     // 定番料理・コンビニ・スープ・日常食データベース（市販1食分の実測ベース）
     const COMMON_FOOD_DB = [
-      // 市販スープ・汁物（クノール等の実測値：1袋/1杯あたり）
       { keywords: ['クノールのポタージュスープ', 'クノールポタージュ', 'ポタージュスープ', 'ポタージュ'], carbs: 12.0, calories: 65, carb: 'カップスープ1袋（約150ml）', name: 'ポタージュスープ' },
       { keywords: ['クノールコーンクリーム', 'コーンクリームスープ', 'コーンポタージュ', 'コーンスープ'], carbs: 12.5, calories: 72, carb: 'カップスープ1袋', name: 'コーンスープ' },
       { keywords: ['クノール', 'カップスープ'], carbs: 11.0, calories: 65, carb: '粉末カップスープ1袋', name: 'カップスープ' },
@@ -687,7 +654,6 @@
       { keywords: ['春雨スープ', 'スープはるさめ'], carbs: 18.0, calories: 95, carb: '春雨（でんぷん質）', name: '春雨スープ' },
       { keywords: ['豚汁'], carbs: 6.5, calories: 140, carb: '根菜・豚肉具沢山', name: '豚汁' },
 
-      // 定番丼・ご飯もの
       { keywords: ['セイコーマートの豚丼', 'セコマの豚丼', 'ホットシェフ豚丼', 'セコマ豚丼'], carbs: 83.0, calories: 645, carb: '豚肉甘辛タレ・白米しっかり', name: 'セコマ豚丼' },
       { keywords: ['豚丼', '豚めし', '十勝豚丼'], carbs: 80.0, calories: 620, carb: '甘辛タレ・豚肉・ご飯', name: '豚丼' },
       { keywords: ['かつ丼', 'カツ丼', 'ロースかつ丼', 'ヒレカツ丼'], carbs: 115.0, calories: 920, carb: 'カツ衣・甘辛タレ・白米に糖質多め', name: 'かつ丼' },
@@ -701,7 +667,6 @@
       { keywords: ['中華丼'], carbs: 88.0, calories: 630, carb: '餡の片栗粉とご飯に糖質', name: '中華丼' },
       { keywords: ['うな丼', 'うな重', '鰻'], carbs: 95.0, calories: 750, carb: '甘だれ・ご飯多め', name: 'うな丼' },
 
-      // おにぎり・主食
       { keywords: ['ツナマヨおにぎり', 'マヨおにぎり', 'ツナマヨ'], carbs: 38.0, calories: 220, carb: 'ツナマヨ具材', name: 'ツナマヨおにぎり' },
       { keywords: ['鮭おにぎり', '梅おにぎり', '昆布おにぎり', 'おにぎり', 'おむすび'], carbs: 39.0, calories: 180, carb: 'おにぎり1個', name: 'おにぎり' },
       { keywords: ['白米', 'ご飯', 'ごはん', 'お米'], carbs: 55.0, calories: 240, carb: 'ご飯1膳（約150g）', name: 'ご飯（1膳）' },
@@ -709,7 +674,6 @@
       { keywords: ['食パン', 'トースト'], carbs: 28.0, calories: 160, carb: '6枚切り1枚', name: '食パン（1枚）' },
       { keywords: ['クロワッサン'], carbs: 19.0, calories: 180, carb: '脂質高め・糖質はやや控えめ', name: 'クロワッサン' },
 
-      // 麺類
       { keywords: ['ラーメン', 'らーめん', '醤油ラーメン', '味噌ラーメン', '豚骨ラーメン'], carbs: 68.0, calories: 550, carb: '中華麺1玉に糖質集中', name: 'ラーメン' },
       { keywords: ['つけ麺'], carbs: 85.0, calories: 750, carb: '麺量多め・濃厚スープ', name: 'つけ麺' },
       { keywords: ['うどん', 'かけうどん', '讃岐うどん'], carbs: 58.0, calories: 340, carb: 'うどん麺は消化吸収が早い', name: 'かけうどん' },
@@ -717,7 +681,6 @@
       { keywords: ['パスタ', 'スパゲティ', 'ナポリタン', 'ミートソース', 'カルボナーラ'], carbs: 75.0, calories: 650, carb: 'デュラム小麦パスタ1人前', name: 'パスタ' },
       { keywords: ['焼きそば', 'ソース焼きそば'], carbs: 65.0, calories: 520, carb: '中華麺と濃厚ソース', name: '焼きそば' },
 
-      // おかず・惣菜
       { keywords: ['唐揚げ', 'から揚げ', 'からあげ', 'フライドチキン'], carbs: 16.0, calories: 380, carb: '衣の片栗粉・小麦粉', name: '鶏の唐揚げ' },
       { keywords: ['生姜焼き', '豚の生姜焼き'], carbs: 12.0, calories: 390, carb: 'タレの砂糖・みりん', name: '豚の生姜焼き' },
       { keywords: ['ハンバーグ'], carbs: 15.0, calories: 420, carb: 'つなぎのパン粉とソース', name: 'ハンバーグ' },
@@ -733,17 +696,14 @@
       { keywords: ['冷奴', '豆腐'], carbs: 2.0, calories: 80, carb: '低糖質・良質なたんぱく質', name: '冷奴' },
       { keywords: ['ほうれん草のおひたし', 'おひたし'], carbs: 1.5, calories: 25, carb: '極めて低糖質', name: 'おひたし' },
       { keywords: ['煮物', '肉じゃが'], carbs: 22.0, calories: 240, carb: 'じゃがいも・人参・砂糖・みりん', name: '肉じゃが' },
-      { keywords: ['卵焼き', '目玉焼き', 'ゆで卵'], carbs: 1.0, calories: 95, carb: '超低糖質（甘い卵焼きは+3g）', name: '卵料理' }
+      { keywords: ['卵焼き', '目玉焼き', 'ゆで卵'], carbs: 1.0, calories: 95, carb: '超低糖質', name: '卵料理' }
     ];
 
     let userCustomDict = {};
 
-    // ユーザー自身が登録・手動修正した辞書を最優先で照会する関数
     function findUserCustomMatch(itemText) {
       if (!itemText) return null;
       const clean = itemText.toLowerCase().replace(/[\s　]/g, '');
-      
-      // 1. 完全一致・部分一致を長い単語から探索
       const keys = Object.keys(userCustomDict).sort((a, b) => b.length - a.length);
       for (const k of keys) {
         const cleanK = k.toLowerCase().replace(/[\s　]/g, '');
@@ -761,11 +721,8 @@
       return null;
     }
 
-    // 単一食品のマッチ関数（マイ辞書を最優先、次に内蔵定番DB）
     function findSingleFoodMatch(itemText) {
       if (!itemText) return null;
-
-      // 最優先: ユーザーが過去に自分で入力・修正したマイ辞書データ
       const userMatch = findUserCustomMatch(itemText);
       if (userMatch) return userMatch;
 
@@ -784,7 +741,6 @@
         }
       }
 
-      // 未登録品目のざっくり推計
       if (/ポタージュ|コーンスープ|スープ/.test(clean)) return { name: itemText, carbs: 12.0, calories: 68, carb: 'スープ1杯目安' };
       if (/丼|重/.test(clean)) return { name: itemText, carbs: 85.0, calories: 650, carb: 'ご飯・タレに糖質' };
       if (/ラーメン|うどん|そば|パスタ|麺/.test(clean)) return { name: itemText, carbs: 65.0, calories: 520, carb: '主食麺類' };
@@ -798,7 +754,6 @@
       return null;
     }
 
-    // カンマ（, や 、）、改行、スペース区切りの複数品目を合算する関数
     function calculateTotalNutrition(fullText) {
       if (!fullText) return null;
       const rawItems = fullText.split(/[,、/+\n]/).map(s => s.trim()).filter(Boolean);
@@ -844,8 +799,8 @@
     let isListening = false;
     let quickBsTargetMealId = null;
 
-    let activeChartType = 'bp'; // 'bp' or 'bs'
-    let activeChartDays = 14;   // 7, 14, or 30
+    let activeChartType = 'bs'; // デフォルトを血糖スパイクに
+    let activeChartDays = 14;
     let vitalTrendChartInstance = null;
 
     function getTodayString() {
@@ -932,12 +887,12 @@
           date: today,
           time: '12:30',
           type: '昼食',
-          content: '蒸し鶏のたっぷりグリーンサラダ、全粒粉パン1枚、ゆで卵、ミネストローネ',
-          preBloodSugar: '108',
-          postBloodSugar: '',
-          carbs: 32.0,
-          calories: 480,
-          carb: '主食パン1枚'
+          content: 'セイコーマートの豚丼、サラダ',
+          preBloodSugar: '115',
+          postBloodSugar: '210',
+          carbs: 87.5,
+          calories: 690,
+          carb: '豚肉甘辛タレ・白米しっかり'
         }
       ];
       dailyRecords[today] = {
@@ -951,11 +906,6 @@
         meds: '朝食後処方薬1錠',
         memo: '食後20分ウォーキング実施'
       };
-      mealMemory = [
-        { content: '玄米（小盛り約100g）、納豆、焼き鮭、味噌汁', carbs: 45.2, calories: 420, carb: '玄米小盛り' },
-        { content: '蒸し鶏のたっぷりサラダ、全粒粉パン1枚、ゆで卵', carbs: 32.0, calories: 480, carb: '全粒粉' },
-        { content: 'かつ丼', carbs: 115.0, calories: 920, carb: 'カツ衣・甘辛タレ・白米に糖質多め' }
-      ];
       saveData(STORAGE_KEY_MEALS, allMeals);
       saveData(STORAGE_KEY_DAILY, dailyRecords);
       saveData(STORAGE_KEY_MEMORY, mealMemory);
@@ -1028,6 +978,16 @@
     const btnOpenSync = document.getElementById('btn-open-sync');
     const syncModal = document.getElementById('sync-modal');
     const btnCloseSync = document.getElementById('btn-close-sync');
+    const tabSyncQr = document.getElementById('tab-sync-qr');
+    const tabSyncFile = document.getElementById('tab-sync-file');
+    const panelSyncQr = document.getElementById('panel-sync-qr');
+    const panelSyncFile = document.getElementById('panel-sync-file');
+    const btnShowQrMode = document.getElementById('btn-show-qr-mode');
+    const btnScanQrMode = document.getElementById('btn-scan-qr-mode');
+    const qrDisplayBox = document.getElementById('qr-display-box');
+    const qrScannerBox = document.getElementById('qr-scanner-box');
+    const qrcodeContainer = document.getElementById('qrcode-container');
+    const btnStopScanner = document.getElementById('btn-stop-scanner');
     const btnDownloadBackup = document.getElementById('btn-download-backup');
     const fileImportBackup = document.getElementById('file-import-backup');
 
@@ -1039,33 +999,10 @@
     const chartStatAvgSpike = document.getElementById('chart-stat-avg-spike');
     const chartStatMaxBs = document.getElementById('chart-stat-max-bs');
 
-    tabGraphBp.addEventListener('click', () => {
-      activeChartType = 'bp';
-      tabGraphBp.className = 'px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition';
-      tabGraphBs.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
-      renderTrendChart();
-    });
-
-    tabGraphBs.addEventListener('click', () => {
-      activeChartType = 'bs';
-      tabGraphBs.className = 'px-2.5 py-1 rounded-lg bg-white text-rose-700 shadow-xs transition';
-      tabGraphBp.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
-      renderTrendChart();
-    });
-
-    btnGraphRanges.forEach(btn => {
-      btn.addEventListener('click', () => {
-        btnGraphRanges.forEach(b => {
-          b.className = 'btn-graph-range px-2 py-1 rounded-lg text-slate-600 transition';
-        });
-        btn.className = 'btn-graph-range px-2 py-1 rounded-lg bg-white text-slate-800 shadow-xs transition';
-        activeChartDays = parseInt(btn.dataset.days, 10);
-        renderTrendChart();
-      });
-    });
-
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
+
+    let html5QrScannerInstance = null;
 
     function showToast(msg) {
       toastMessage.textContent = msg;
@@ -1432,7 +1369,7 @@
         }
         chartStatMaxBs.textContent = maxBsFound > 0 ? `${maxBsFound} mg/dL` : '-';
 
-        // 血糖値のダイナミックレンジ計算（60台の低血糖から450〜500の高血糖まで突き抜けない設定）
+        // 血糖値のダイナミックスケール計算（60台の低血糖から450〜500の高血糖まで突き抜けない設定）
         const effectiveMin = minBsFound < 999 ? minBsFound : 70;
         const dynamicYMin = Math.max(30, Math.floor((effectiveMin - 15) / 10) * 10);
         const dynamicYMax = Math.max(250, Math.ceil((maxBsFound + 30) / 50) * 50);
@@ -1532,6 +1469,31 @@
       saveCurrentDailyRecord();
       selectedDate = getTodayString();
       renderApp();
+    });
+
+    tabGraphBp.addEventListener('click', () => {
+      activeChartType = 'bp';
+      tabGraphBp.className = 'px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition';
+      tabGraphBs.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      renderTrendChart();
+    });
+
+    tabGraphBs.addEventListener('click', () => {
+      activeChartType = 'bs';
+      tabGraphBs.className = 'px-2.5 py-1 rounded-lg bg-white text-rose-700 shadow-xs transition';
+      tabGraphBp.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      renderTrendChart();
+    });
+
+    btnGraphRanges.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btnGraphRanges.forEach(b => {
+          b.className = 'btn-graph-range px-2 py-1 rounded-lg text-slate-600 transition';
+        });
+        btn.className = 'btn-graph-range px-2 py-1 rounded-lg bg-white text-slate-800 shadow-xs transition';
+        activeChartDays = parseInt(btn.dataset.days, 10);
+        renderTrendChart();
+      });
     });
 
     function openQuickPostBsDialog(meal) {
@@ -1691,7 +1653,6 @@
       if (!content || content.length < 2) return;
       const cleanContent = content.trim();
 
-      // 1. 最近の履歴チップ用メモリ
       const existingIdx = mealMemory.findIndex(m => m.content === cleanContent);
       const newEntry = {
         content: cleanContent,
@@ -1706,17 +1667,15 @@
       if (mealMemory.length > 30) mealMemory.shift();
       saveData(STORAGE_KEY_MEMORY, mealMemory);
 
-      // 2. 「マイ辞書」への自動学習（カンマ区切りの個別品目も分解して学習）
       const subItems = cleanContent.split(/[,、/+\n]/).map(s => s.trim()).filter(Boolean);
       if (subItems.length === 1 && carbs !== '' && calories !== '') {
-        // 単一メニューの場合はその数値をそのまま学習
         userCustomDict[cleanContent] = {
           carbs: Number(carbs),
           calories: Number(calories),
           carb: carb || ''
         };
+        saveData(STORAGE_KEY_CUSTOM_DICT, userCustomDict);
       }
-      saveData(STORAGE_KEY_CUSTOM_DICT, userCustomDict);
     }
 
     function saveMealRecord() {
@@ -1759,7 +1718,6 @@
 
       hideModal();
       renderApp();
-      renderTrendChart();
       showToast('食事を保存しました！');
     }
 
@@ -1804,13 +1762,8 @@
         showToast('音声をテキストに変換しました');
       };
 
-      recognition.onerror = () => {
-        stopSpeech();
-      };
-
-      recognition.onend = () => {
-        stopSpeech();
-      };
+      recognition.onerror = () => stopSpeech();
+      recognition.onend = () => stopSpeech();
 
       btnVoiceInput.addEventListener('click', () => {
         if (!recognition) return;
@@ -1925,24 +1878,143 @@
           `"${pre}"`,
           `"${post}"`,
           `"${delta}"`,
-    const btnOpenSync = document.getElementById('btn-open-sync');
-    const syncModal = document.getElementById('sync-modal');
-    const btnCloseSync = document.getElementById('btn-close-sync');
-    const btnDownloadBackup = document.getElementById('btn-download-backup');
-    const fileImportBackup = document.getElementById('file-import-backup');
+          `"${m.carbs !== undefined ? m.carbs : ''}"`,
+          `"${m.calories || ''}"`,
+          `"${(m.carb || '').replace(/"/g, '""')}"`,
+          `"${daily.bpMorningSys || ''}"`,
+          `"${daily.bpMorningDia || ''}"`,
+          `"${daily.bpMorningPulse || ''}"`,
+          `"${daily.bpEveningSys || ''}"`,
+          `"${daily.bpEveningDia || ''}"`,
+          `"${daily.bpEveningPulse || ''}"`,
+          `"${daily.weight || ''}"`,
+          `"${(daily.meds || '').replace(/"/g, '""')}"`,
+          `"${(daily.memo || '').replace(/"/g, '""')}"`
+        ];
+        csv += row.join(',') + '\r\n';
+      });
 
-    const tabSyncQr = document.getElementById('tab-sync-qr');
-    const tabSyncFile = document.getElementById('tab-sync-file');
-    const panelSyncQr = document.getElementById('panel-sync-qr');
-    const panelSyncFile = document.getElementById('panel-sync-file');
-    const btnShowQrMode = document.getElementById('btn-show-qr-mode');
-    const btnScanQrMode = document.getElementById('btn-scan-qr-mode');
-    const qrDisplayBox = document.getElementById('qr-display-box');
-    const qrScannerBox = document.getElementById('qr-scanner-box');
-    const qrcodeContainer = document.getElementById('qrcode-container');
-    const btnStopScanner = document.getElementById('btn-stop-scanner');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `diabetes_record_${getTodayString()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Excel (CSV) をダウンロードしました');
+      exportModal.classList.add('hidden');
+    });
 
-    let html5QrScannerInstance = null;
+    btnPrintPreview.addEventListener('click', () => {
+      const filtered = getFilteredMealsForExport();
+      const range = exportRange.value;
+      const periodLabel = document.getElementById('print-period-label');
+      periodLabel.textContent = `出力期間: 直近 ${range === 'all' ? '全期間' : range + '日間'} (出力日: ${getTodayString()})`;
+
+      // 印刷用バイタル一覧表の生成
+      const vitalsBody = document.getElementById('print-vitals-body');
+      vitalsBody.innerHTML = '';
+      const dates = [...new Set(filtered.map(m => m.date))].sort().reverse();
+
+      if (dates.length === 0) {
+        dates.push(selectedDate);
+      }
+
+      dates.forEach(dStr => {
+        const d = dailyRecords[dStr] || {};
+        const tr = document.createElement('tr');
+        const mBp = (d.bpMorningSys && d.bpMorningDia) ? `${d.bpMorningSys}/${d.bpMorningDia} (${d.bpMorningPulse || '-'})` : '-';
+        const eBp = (d.bpEveningSys && d.bpEveningDia) ? `${d.bpEveningSys}/${d.bpEveningDia} (${d.bpEveningPulse || '-'})` : '-';
+        const weight = d.weight ? `${d.weight} kg` : '-';
+        const memo = [d.meds, d.memo].filter(Boolean).join(' / ') || '-';
+
+        tr.innerHTML = `
+          <td class="border border-slate-400 p-1.5 text-center font-bold">${escapeHtml(dStr)}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-medium">${escapeHtml(mBp)}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-medium">${escapeHtml(eBp)}</td>
+          <td class="border border-slate-400 p-1.5 text-center">${escapeHtml(weight)}</td>
+          <td class="border border-slate-400 p-1.5 text-left">${escapeHtml(memo)}</td>
+        `;
+        vitalsBody.appendChild(tr);
+      });
+
+      // 印刷用食事一覧表の生成
+      const printBody = document.getElementById('print-table-body');
+      printBody.innerHTML = '';
+      filtered.forEach(m => {
+        const tr = document.createElement('tr');
+        let bsDisplay = '-';
+        if (m.preBloodSugar || m.postBloodSugar) {
+          const pre = m.preBloodSugar ? `前:${m.preBloodSugar}` : '';
+          const post = m.postBloodSugar ? `後:${m.postBloodSugar}` : '';
+          let diffStr = '';
+          if (m.preBloodSugar && m.postBloodSugar) {
+            const diff = Number(m.postBloodSugar) - Number(m.preBloodSugar);
+            diffStr = ` (Δ${diff >= 0 ? '+' : ''}${diff})`;
+          }
+          bsDisplay = [pre, post].filter(Boolean).join(' → ') + diffStr;
+        }
+
+        tr.innerHTML = `
+          <td class="border border-slate-400 p-1.5 text-center">${escapeHtml(m.date)}<br><span class="text-[10px] text-slate-500">${escapeHtml(m.time || '')}</span></td>
+          <td class="border border-slate-400 p-1.5 text-center font-bold">${escapeHtml(m.type)}</td>
+          <td class="border border-slate-400 p-1.5 text-left font-medium">
+            ${escapeHtml(m.content)}
+            ${m.carb ? `<br><span class="text-[10px] text-slate-500">工夫: ${escapeHtml(m.carb)}</span>` : ''}
+          </td>
+          <td class="border border-slate-400 p-1.5 text-center font-bold text-violet-800">${m.carbs !== undefined ? m.carbs + 'g' : '-'}</td>
+          <td class="border border-slate-400 p-1.5 text-center text-slate-600">${m.calories ? m.calories + 'kcal' : '-'}</td>
+          <td class="border border-slate-400 p-1.5 text-center font-bold text-rose-700">${escapeHtml(bsDisplay)}</td>
+        `;
+        printBody.appendChild(tr);
+      });
+
+      exportModal.classList.add('hidden');
+      setTimeout(() => {
+        window.print();
+      }, 200);
+    });
+
+    btnCopyClipboard.addEventListener('click', () => {
+      const filtered = getFilteredMealsForExport();
+      if (filtered.length === 0) {
+        showToast('コピー対象の記録がありません');
+        return;
+      }
+
+      let text = `【糖尿病・食事＆血圧記録レポート】\n`;
+      filtered.forEach(m => {
+        const daily = dailyRecords[m.date] || {};
+        let bpStr = '';
+        if (daily.bpMorningSys) bpStr += ` [朝血圧:${daily.bpMorningSys}/${daily.bpMorningDia}]`;
+        text += `\n■ ${m.date} ${m.time || ''} [${m.type}]${bpStr}\n`;
+        text += `・食事: ${m.content}\n`;
+        if (m.carbs) text += `・糖質: ${m.carbs}g / カロリー: ${m.calories || '-'}kcal\n`;
+        if (m.preBloodSugar || m.postBloodSugar) {
+          text += `・リブレ血糖: 食前 ${m.preBloodSugar || '-'} → 食後 ${m.postBloodSugar || '-'}\n`;
+        }
+      });
+
+      const tempInput = document.createElement('textarea');
+      tempInput.value = text;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      showToast('テキストをクリップボードにコピーしました！');
+      exportModal.classList.add('hidden');
+    });
+
+    btnOpenSync.addEventListener('click', () => {
+      syncModal.classList.remove('hidden');
+    });
+
+    btnCloseSync.addEventListener('click', () => {
+      stopCameraScanner();
+      syncModal.classList.add('hidden');
+    });
 
     tabSyncQr.addEventListener('click', () => {
       tabSyncQr.className = 'flex-1 py-1.5 rounded-lg bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
@@ -1959,14 +2031,12 @@
       stopCameraScanner();
     });
 
-    // スマホ側：QRコード生成表示
     btnShowQrMode.addEventListener('click', () => {
       stopCameraScanner();
       qrScannerBox.classList.add('hidden');
       qrDisplayBox.classList.remove('hidden');
       qrcodeContainer.innerHTML = '';
 
-      // 直近30日分＋血圧＋マイ辞書にスリム化してQRの容量制限（~2.5KB）をクリア
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 30);
       const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
@@ -2006,7 +2076,6 @@
       }
     });
 
-    // タブレット側：カメラ起動＆スキャン
     btnScanQrMode.addEventListener('click', () => {
       qrDisplayBox.classList.add('hidden');
       qrScannerBox.classList.remove('hidden');
@@ -2027,7 +2096,6 @@
             if (data && data._v === 3 && data.m) {
               stopCameraScanner();
               
-              // 復元処理
               const restoredMeals = data.m.map((sm, i) => ({
                 id: 'sync-' + Date.now() + '-' + i,
                 date: sm.d,
@@ -2061,9 +2129,7 @@
             showToast('QRデータの解析に失敗しました');
           }
         },
-        (errorMessage) => {
-          // 探索中は無視
-        }
+        () => {}
       ).catch(err => {
         console.error("Camera start error:", err);
         showToast('カメラへのアクセスを許可してください');
@@ -2086,7 +2152,7 @@
 
     btnDownloadBackup.addEventListener('click', () => {
       const backupData = {
-        version: 2,
+        version: 3,
         exportedAt: new Date().toISOString(),
         meals: allMeals,
         dailyRecords: dailyRecords,
@@ -2102,9 +2168,7 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    btnCloseSync.addEventListener('click', () => {
-      stopCameraScanner();
-      syncModal.classList.add('hidden');
+      showToast('バックアップファイルを保存しました');
     });
 
     fileImportBackup.addEventListener('change', (e) => {
