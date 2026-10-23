@@ -2391,44 +2391,205 @@
 
     function renderQrCodeGraphic(text) {
       qrcodeContainer.innerHTML = '';
-      // 認識精度を高めるためサイズを 260px に拡大し、コントラストを最大化
-      new QRCode(qrcodeContainer, {
-        text: text,
-        width: 260,
-        height: 260,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M // 汚れ・ピンボケに強いMレベルに調整
-      });
+      try {
+        // コンテナのスタイルを確実に初期化して高さを確保
+        qrcodeContainer.style.display = 'flex';
+        qrcodeContainer.style.justifyContent = 'center';
+        qrcodeContainer.style.alignItems = 'center';
+        
+        new QRCode(qrcodeContainer, {
+          text: text,
+          width: 256,
+          height: 256,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.error('QR Code render error:', err);
+        qrcodeContainer.innerHTML = `
+          <div class="p-4 text-center text-xs text-rose-600 bg-rose-50 rounded-xl">
+            <i class="fa-solid fa-triangle-exclamation text-base mb-1 block"></i>
+            QRコードの生成に失敗しました。<br>「LINE/テキスト貼付」同期をお試しください。
+          </div>
+        `;
+      }
     }
 
     function generateOptimizedQr(days) {
+      if (!qrcodeContainer) return;
+      qrcodeContainer.innerHTML = '<div class="text-xs text-slate-400 py-10 flex items-center justify-center gap-2"><i class="fa-solid fa-spinner fa-spin text-emerald-600"></i> QRコードを生成中...</div>';
+      
       qrSplitControls.classList.add('hidden');
       qrSplitDataParts = null;
       qrCurrentPartIndex = 0;
 
-      const payload = buildUltraCompactPayload(days);
-      const rawJson = JSON.stringify(payload);
-      const compressed = LZString.compressToEncodedURIComponent(rawJson);
-
-      // タブレット標準カメラでもWebアプリのURLとして直接開けるリンク形式に対応
-      // (現在のページURL + #sync=圧縮データ)
-      const baseUrl = window.location.href.split('#')[0];
-      const directSyncUrl = `${baseUrl}#s=${compressed}`;
-
-      // 1枚で安全にスキャン可能な閾値（URL含め約800文字以下）
-      if (directSyncUrl.length <= 850) {
+      setTimeout(() => {
         try {
-          renderQrCodeGraphic(directSyncUrl);
-          qrSizeNote.innerHTML = `直近${days}日分 <span class="text-emerald-700 font-bold">（標準カメラでも認識可能）</span>`;
-          showToast(`直近${days}日分のQRコードを表示しました`);
-        } catch (err) {
-          console.error(err);
-          setupSplitQrCodes(compressed, days);
+          const payload = buildUltraCompactPayload(days);
+          const rawJson = JSON.stringify(payload);
+          const compressed = LZString.compressToEncodedURIComponent(rawJson);
+
+          // タブレット標準カメラでも直接開けるリンク形式に対応
+          const baseUrl = window.location.href.split('#')[0];
+          const directSyncUrl = `${baseUrl}#s=${compressed}`;
+
+          // 1枚で安全にスキャン可能な閾値
+          if (directSyncUrl.length <= 850) {
+            renderQrCodeGraphic(directSyncUrl);
+            qrSizeNote.innerHTML = `直近${days}日分 <span class="text-emerald-700 font-bold">（標準カメラでも認識可能）</span>`;
+            showToast(`直近${days}日分のQRコードを表示しました`);
+          } else {
+            setupSplitQrCodes(compressed, days);
+          }
+        } catch (e) {
+          console.error('QR generate error:', e);
+          qrcodeContainer.innerHTML = '<p class="text-xs text-rose-600">データの圧縮処理でエラーが発生しました</p>';
         }
+      }, 50);
+    }
+
+    function setupSplitQrCodes(compressed, days) {
+      const half = Math.ceil(compressed.length / 2);
+      const part1 = compressed.substring(0, half);
+      const part2 = compressed.substring(half);
+
+      qrSplitDataParts = [
+        `SP:1:2:${part1}`,
+        `SP:2:2:${part2}`
+      ];
+      qrCurrentPartIndex = 0;
+
+      qrSplitControls.classList.remove('hidden');
+      setSplitPartButtonState(0);
+      renderQrCodeGraphic(qrSplitDataParts[0]);
+
+      qrSizeNote.innerHTML = `<span class="text-amber-700 font-bold">【1枚目 / 全2枚】</span> タブレットを近づけてかざしてください`;
+      showToast(`データが多いため2枚に分割表示しました（1枚目を表示中）`);
+    }
+
+    function setSplitPartButtonState(index) {
+      if (index === 0) {
+        btnQrPart1.className = 'px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+        btnQrPart2.className = 'px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
       } else {
-        // 850文字を超える場合は確実に読み取れるよう自動2分割
-        setupSplitQrCodes(compressed, days);
+        btnQrPart2.className = 'px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+        btnQrPart1.className = 'px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
+      }
+    }
+
+    btnQrPart1.addEventListener('click', () => {
+      if (!qrSplitDataParts) return;
+      qrCurrentPartIndex = 0;
+      setSplitPartButtonState(0);
+      renderQrCodeGraphic(qrSplitDataParts[0]);
+      qrSizeNote.innerHTML = `<span class="text-amber-700 font-bold">【1枚目 / 全2枚】</span> タブレットにかざしてください`;
+    });
+
+    btnQrPart2.addEventListener('click', () => {
+      if (!qrSplitDataParts) return;
+      qrCurrentPartIndex = 1;
+      setSplitPartButtonState(1);
+      renderQrCodeGraphic(qrSplitDataParts[1]);
+      qrSizeNote.innerHTML = `<span class="text-emerald-700 font-bold">【2枚目 / 全2枚】</span> 続けてタブレットにかざしてください`;
+    });
+
+    btnQrDays14.addEventListener('click', () => {
+      qrTargetDays = 14;
+      btnQrDays14.className = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+      btnQrDays30.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
+      generateOptimizedQr(14);
+    });
+
+    btnQrDays30.addEventListener('click', () => {
+      qrTargetDays = 30;
+      btnQrDays30.className = 'px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs';
+      btnQrDays14.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600';
+      generateOptimizedQr(30);
+    });
+
+    btnShowQrMode.addEventListener('click', () => {
+      stopCameraScanner();
+      qrScannerBox.classList.add('hidden');
+      qrDisplayBox.classList.remove('hidden');
+      generateOptimizedQr(qrTargetDays);
+    });
+
+    btnScanQrMode.addEventListener('click', () => {
+      qrDisplayBox.classList.add('hidden');
+      qrScannerBox.classList.remove('hidden');
+      scannerReceivedParts = {};
+      scannerProgressBadge.classList.add('hidden');
+
+      stopCameraScanner();
+
+      // カメラ表示要素を初期化
+      const readerElem = document.getElementById("qr-reader");
+      if (readerElem) {
+        readerElem.innerHTML = '';
+      }
+
+      try {
+        html5QrScannerInstance = new Html5Qrcode("qr-reader", {
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          },
+          verbose: false
+        });
+
+        const scanConfig = {
+          fps: 15,
+          qrbox: (w, h) => {
+            const minEdge = Math.min(w, h);
+            const edgeSize = Math.max(180, Math.floor(minEdge * 0.75));
+            return { width: edgeSize, height: edgeSize };
+          },
+          aspectRatio: 1.0
+        };
+
+        // 背面カメラを優先起動
+        html5QrScannerInstance.start(
+          { facingMode: "environment" },
+          scanConfig,
+          (decodedText) => {
+            handleIncomingSyncString(decodedText);
+          },
+          () => {}
+        ).catch(err => {
+          console.warn("Environment camera failed, retrying any video camera:", err);
+          // 外部カメラや特定のタブレット環境で facingMode: environment が失敗した場合のフォールバック
+          html5QrScannerInstance.start(
+            true, // 任意のカメラ
+            scanConfig,
+            (decodedText) => handleIncomingSyncString(decodedText),
+            () => {}
+          ).catch(finalErr => {
+            console.error("Camera access denied or failed:", finalErr);
+            showToast('カメラへのアクセスを許可してください（または標準カメラアプリをご使用ください）');
+          });
+        });
+      } catch (err) {
+        console.error("Scanner init error:", err);
+        showToast('カメラの起動に失敗しました');
+      }
+    });
+
+    function stopCameraScanner() {
+      if (html5QrScannerInstance) {
+        try {
+          html5QrScannerInstance.stop().then(() => {
+            html5QrScannerInstance.clear();
+            html5QrScannerInstance = null;
+          }).catch(() => {
+            try { html5QrScannerInstance.clear(); } catch(e){}
+            html5QrScannerInstance = null;
+          });
+        } catch(e) {
+          html5QrScannerInstance = null;
+        }
+      }
+      if (qrScannerBox) {
+        qrScannerBox.classList.add('hidden');
       }
     }
 
