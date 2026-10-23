@@ -14,9 +14,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Chart.js for Doctor Trend Graphs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- QR Code Generator & Camera Scanner for Direct Tablet Sync -->
+  <!-- QR Code Generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- jsQR: 最も軽量でスマホ/Safari対応が安定しているQRデコーダ -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <!-- LZ-String for Extreme QR Data Compression -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 
@@ -686,21 +687,42 @@
             <span id="scanner-progress-text">1枚目を読取完了！2枚目をかざしてください</span>
           </div>
 
-          <div class="relative rounded-2xl overflow-hidden border-2 border-indigo-400 bg-black shadow-inner">
-            <div id="qr-reader" class="w-full"></div>
-            <!-- ピント合わせガイド -->
-            <div class="pointer-events-none absolute inset-0 border-2 border-dashed border-white/60 m-8 rounded-xl flex items-center justify-center">
-              <span class="text-[11px] text-white/90 bg-black/50 px-2 py-1 rounded-md backdrop-blur-xs">枠内にQRコードを収めてください</span>
+          <!-- カメラプレビューコンテナ（ネイティブvideo＋canvas） -->
+          <div class="relative rounded-2xl overflow-hidden border-2 border-indigo-400 bg-slate-900 shadow-inner min-h-[260px] flex items-center justify-center">
+            <video id="qr-video" class="w-full h-full object-cover max-h-[300px]" playsinline autoplay muted></video>
+            <canvas id="qr-canvas" class="hidden"></canvas>
+
+            <!-- カメラ準備中のスピナー表示 -->
+            <div id="camera-loading-indicator" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 text-white gap-2 p-4 text-center">
+              <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-400"></i>
+              <span class="text-xs font-semibold">カメラを起動しています...</span>
+              <span class="text-[10px] text-slate-400">画面に「カメラの許可」が出たら【許可】を押してください</span>
+            </div>
+
+            <!-- スキャン枠ガイド -->
+            <div id="camera-scan-guide" class="pointer-events-none absolute inset-0 border-2 border-dashed border-white/70 m-6 rounded-2xl flex items-center justify-center hidden">
+              <span class="text-[11px] text-white bg-black/60 px-2.5 py-1 rounded-full backdrop-blur-xs font-medium">ここにQRコードを収めてください</span>
             </div>
           </div>
-          
-          <p class="text-[11px] text-slate-400 text-center">
-            ※認識しづらい場合は、タブレットを前後に動かしてピントを合わせるか、タブレット標準のカメラアプリをお試しください
-          </p>
 
-          <button type="button" id="btn-stop-scanner" class="w-full py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
-            カメラを終了する
-          </button>
+          <!-- カメラエラー時の表示案内 -->
+          <div id="camera-error-msg" class="hidden p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-1">
+            <div class="font-bold flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> カメラが起動できませんでした</div>
+            <p class="text-[11px] text-rose-700 leading-relaxed">
+              ブラウザの設定で「カメラへのアクセス」がブロックされているか、別のアプリがカメラを使用中です。
+            </p>
+          </div>
+
+          <div class="flex gap-2">
+            <!-- 写真撮影/アルバムから読み取るフォールバックボタン -->
+            <label class="flex-1 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
+              <i class="fa-solid fa-image"></i> 写真を撮って/選んで読取
+              <input type="file" id="qr-file-input" accept="image/*" class="hidden">
+            </label>
+            <button type="button" id="btn-stop-scanner" class="py-2.5 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
+              閉じる
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1164,7 +1186,15 @@
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
 
-    let html5QrScannerInstance = null;
+    // ネイティブカメラストリーム・スキャナ管理変数
+    let activeMediaStream = null;
+    let cameraScanAnimationId = null;
+    const qrVideo = document.getElementById('qr-video');
+    const qrCanvas = document.getElementById('qr-canvas');
+    const cameraLoadingIndicator = document.getElementById('camera-loading-indicator');
+    const cameraScanGuide = document.getElementById('camera-scan-guide');
+    const cameraErrorMsg = document.getElementById('camera-error-msg');
+    const qrFileInput = document.getElementById('qr-file-input');
 
     function showToast(msg) {
       toastMessage.textContent = msg;
@@ -2770,56 +2800,163 @@
       qrScannerBox.classList.remove('hidden');
       scannerReceivedParts = {};
       scannerProgressBadge.classList.add('hidden');
+      if (cameraErrorMsg) cameraErrorMsg.classList.add('hidden');
 
-      if (html5QrScannerInstance) {
-        stopCameraScanner();
+      startNativeCameraScanner();
+    });
+
+    // ネイティブカメラの起動とjsQRによる連続フレーム解析
+    async function startNativeCameraScanner() {
+      stopCameraScanner();
+
+      cameraLoadingIndicator.classList.remove('hidden');
+      cameraScanGuide.classList.add('hidden');
+      if (cameraErrorMsg) cameraErrorMsg.classList.add('hidden');
+
+      // HTTPSまたはlocalhost環境以外ではブラウザがカメラAPIを拒否するため事前チェック
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showCameraError('お使いのブラウザはカメラのライブ取得に対応していないか、安全な通信(HTTPS)環境ではありません。「写真を撮って読取」をご利用ください。');
+        return;
       }
 
-      // ネイティブBarcodeDetectorの利用を有効化し、高速・高精細読み取り
-      html5QrScannerInstance = new Html5Qrcode("qr-reader", {
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
+      // スマホの背面カメラ（environment）を最優先で要求
+      const constraints = {
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         },
-        verbose: false
-      });
-
-      // 解像度をフルHD〜HD優先にし、オートフォーカス・フレームレートを最適化
-      const cameraConfig = {
-        facingMode: "environment",
-        focusMode: "continuous"
+        audio: false
       };
 
-      const scanConfig = {
-        fps: 15, // 認識頻度を向上
-        qrbox: (viewfinderWidth, viewfinderHeight) => {
-          // 画面全体に近い広めのスキャン枠（75%）を自動計算し、画面端でも認識可能に
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const edgeSize = Math.floor(minEdge * 0.75);
-          return { width: edgeSize, height: edgeSize };
-        },
-        aspectRatio: 1.0
-      };
+      try {
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (firstErr) {
+          console.warn("FacingMode environment failed, trying fallback:", firstErr);
+          // 外部カメラやPC・特殊な端末で背面指定が失敗した場合、任意のビデオカメラで再試行
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
 
-      html5QrScannerInstance.start(
-        cameraConfig,
-        scanConfig,
-        (decodedText) => {
-          handleIncomingSyncString(decodedText);
-        },
-        () => {}
-      ).catch(err => {
-        console.error("Camera start error with advanced config, falling back to simple:", err);
-        // 万が一カメラ起動に失敗した場合はシンプル設定でリトライ
-        html5QrScannerInstance.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => handleIncomingSyncString(decodedText),
-          () => {}
-        ).catch(e => {
-          showToast('カメラへのアクセスを許可してください');
+        activeMediaStream = stream;
+        qrVideo.srcObject = stream;
+        qrVideo.setAttribute("playsinline", true); // iOS Safariで必須
+
+        // 映像の再生準備が完了したタイミングで解析ループを開始
+        qrVideo.onloadedmetadata = () => {
+          qrVideo.play().then(() => {
+            cameraLoadingIndicator.classList.add('hidden');
+            cameraScanGuide.classList.remove('hidden');
+            requestNextScanFrame();
+          }).catch(playErr => {
+            console.error("Video play error:", playErr);
+            showCameraError('映像の再生を開始できませんでした。');
+          });
+        };
+      } catch (err) {
+        console.error("Camera access error:", err);
+        showCameraError('カメラの起動に失敗しました。ブラウザのカメラ権限が「許可」になっているかご確認ください。');
+      }
+    }
+
+    function showCameraError(msg) {
+      cameraLoadingIndicator.classList.add('hidden');
+      cameraScanGuide.classList.add('hidden');
+      if (cameraErrorMsg) {
+        cameraErrorMsg.classList.remove('hidden');
+        const p = cameraErrorMsg.querySelector('p');
+        if (p) p.textContent = msg;
+      }
+    }
+
+    // カメラ映像の1コマ（フレーム）をCanvasに描画してjsQRで高速判定
+    function requestNextScanFrame() {
+      if (!activeMediaStream) return;
+
+      if (qrVideo.readyState === qrVideo.HAVE_ENOUGH_DATA) {
+        const vW = qrVideo.videoWidth;
+        const vH = qrVideo.videoHeight;
+
+        if (vW > 0 && vH > 0) {
+          qrCanvas.width = vW;
+          qrCanvas.height = vH;
+          const ctx = qrCanvas.getContext('2d', { willReadFrequently: true });
+          ctx.drawImage(qrVideo, 0, 0, vW, vH);
+
+          const imageData = ctx.getImageData(0, 0, vW, vH);
+          if (typeof jsQR !== 'undefined') {
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: "dontInvert"
+            });
+
+            if (code && code.data) {
+              // QRコードを発見
+              handleIncomingSyncString(code.data);
+              return; // 一旦ループを停止して処理へ
+            }
+          }
+        }
+      }
+
+      cameraScanAnimationId = requestAnimationFrame(requestNextScanFrame);
+    }
+
+    // カメラストリームと解析アニメーションの確実な停止
+    function stopCameraScanner() {
+      if (cameraScanAnimationId) {
+        cancelAnimationFrame(cameraScanAnimationId);
+        cameraScanAnimationId = null;
+      }
+      if (activeMediaStream) {
+        activeMediaStream.getTracks().forEach(track => {
+          try { track.stop(); } catch(e){}
         });
+        activeMediaStream = null;
+      }
+      if (qrVideo) {
+        qrVideo.srcObject = null;
+      }
+      if (qrScannerBox) {
+        qrScannerBox.classList.add('hidden');
+      }
+    }
+
+    btnStopScanner.addEventListener('click', stopCameraScanner);
+
+    // 写真撮影・アルバムからQRを静止画として読み取るフォールバック処理
+    if (qrFileInput) {
+      qrFileInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            qrCanvas.width = img.width;
+            qrCanvas.height = img.height;
+            const ctx = qrCanvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+            const imageData = ctx.getImageData(0, 0, img.width, img.height);
+
+            if (typeof jsQR !== 'undefined') {
+              const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "attemptBoth"
+              });
+              if (code && code.data) {
+                handleIncomingSyncString(code.data);
+              } else {
+                showToast('写真からQRコードを検出できませんでした。ピントを合わせて撮り直してください。');
+              }
+            }
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
       });
-    });
+    }
 
     // 読み取った文字列（URL形式・単一形式・分割形式）を判定して復元する共通関数
     function handleIncomingSyncString(decodedText) {
@@ -2864,6 +3001,8 @@
             scannerProgressBadge.classList.remove('hidden');
             scannerProgressText.textContent = `1枚目を読取完了！続けて2枚目をかざしてください`;
             showToast(`1枚目を読取完了！2枚目をかざしてください`);
+            // 2枚目の待機のために解析ループを継続
+            cameraScanAnimationId = requestAnimationFrame(requestNextScanFrame);
           } else {
             const fullCompressed = scannerReceivedParts['1'] + scannerReceivedParts['2'];
             let jsonString = LZString.decompressFromEncodedURIComponent(fullCompressed);
