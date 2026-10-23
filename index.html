@@ -2748,66 +2748,6 @@
         }
       }
     }
-              return;
-            }
-
-            // 分割QRコード（SP:part:total:data）の場合
-            if (decodedText.startsWith('SP:')) {
-              const parts = decodedText.split(':');
-              const curPart = parts[1];
-              const totalParts = parts[2];
-              const chunkData = parts.slice(3).join(':');
-
-              scannerReceivedParts[curPart] = chunkData;
-
-              if (Object.keys(scannerReceivedParts).length < Number(totalParts)) {
-                // 1枚目読取完了時
-                scannerProgressBadge.classList.remove('hidden');
-                scannerProgressText.textContent = `1枚目を読取完了！続けて2枚目をかざしてください`;
-                showToast(`1枚目を読取完了！2枚目をかざしてください`);
-              } else {
-                // 2枚そろった時（合体）
-                const fullCompressed = scannerReceivedParts['1'] + scannerReceivedParts['2'];
-                const jsonString = LZString.decompressFromBase64(fullCompressed);
-                const data = JSON.parse(jsonString);
-                if (applySyncedData(data)) {
-                  stopCameraScanner();
-                  syncModal.classList.add('hidden');
-                  showToast('✨ 30日分のデータをタブレットに同期完了しました！');
-                }
-              }
-              return;
-            }
-
-            // 旧形式 LZ: の後方互換
-            if (decodedText.startsWith('LZ:')) {
-              const jsonString = LZString.decompressFromEncodedURIComponent(decodedText.substring(3));
-              const data = JSON.parse(jsonString);
-              if (applySyncedData(data)) {
-                stopCameraScanner();
-                syncModal.classList.add('hidden');
-                showToast('✨ タブレットに最新データを同期完了しました！');
-              }
-              return;
-            }
-
-            // 通常の直接JSON
-            const data = JSON.parse(decodedText);
-            if (applySyncedData(data)) {
-              stopCameraScanner();
-              syncModal.classList.add('hidden');
-              showToast('✨ タブレットに最新データを同期完了しました！');
-            }
-          } catch (e) {
-            console.error('QR parse error:', e);
-          }
-        },
-        () => {}
-      ).catch(err => {
-        console.error("Camera start error:", err);
-        showToast('カメラへのアクセスを許可してください');
-      });
-    });
 
     // LINE/テキスト貼付同期の処理
     btnCopySyncCode.addEventListener('click', () => {
