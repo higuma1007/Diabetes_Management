@@ -103,6 +103,21 @@
       </button>
     </section>
 
+    <!-- 表示モード切り替えタブ（1日ごと / 期間一覧表） -->
+    <section class="flex bg-slate-200/80 p-1 rounded-2xl text-xs font-bold shadow-inner">
+      <button type="button" id="tab-view-daily" class="flex-1 py-2 rounded-xl bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-calendar-day"></i>
+        <span>1日ごと記録</span>
+      </button>
+      <button type="button" id="tab-view-table" class="flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-table-list"></i>
+        <span>全期間・履歴一覧表</span>
+      </button>
+    </section>
+
+    <!-- 1日表示ビュー用ラッパー -->
+    <div id="view-daily-wrapper" class="space-y-4">
+
     <!-- 4大統計サマリー -->
     <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
       <div class="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-xs">
@@ -272,6 +287,56 @@
 
       <div id="meals-container" class="space-y-2.5">
         <!-- 動的描画 -->
+      </div>
+    </section>
+
+    </div>
+    <!-- /1日表示ビュー用ラッパー -->
+
+    <!-- 期間一覧表ビュー用ラッパー（初期状態は非表示） -->
+    <section id="view-table-wrapper" class="hidden space-y-3.5">
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-3.5 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+              <i class="fa-solid fa-table-cells"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                <span>記録データ一覧表</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold">画面で直接確認</span>
+              </h2>
+              <p class="text-[11px] text-slate-400">タップでその日の編集へ移動できます</p>
+            </div>
+          </div>
+
+          <!-- 一覧の表示期間切り替えボタン -->
+          <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold self-start sm:self-auto">
+            <button type="button" data-table-days="7" class="btn-table-range px-2.5 py-1 rounded-lg text-slate-600 transition">7日</button>
+            <button type="button" data-table-days="14" class="btn-table-range px-2.5 py-1 rounded-lg bg-white text-emerald-800 shadow-xs transition">14日</button>
+            <button type="button" data-table-days="30" class="btn-table-range px-2.5 py-1 rounded-lg text-slate-600 transition">30日</button>
+            <button type="button" data-table-days="all" class="btn-table-range px-2.5 py-1 rounded-lg text-slate-600 transition">全期間</button>
+          </div>
+        </div>
+
+        <!-- 画面用一覧テーブル本体 -->
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full border-collapse text-xs bg-white text-left whitespace-nowrap min-w-[620px]">
+            <thead class="bg-slate-100/80 text-slate-600 font-semibold border-b border-slate-200 text-[11px]">
+              <tr>
+                <th class="py-2.5 px-3">日付 / 時間</th>
+                <th class="py-2.5 px-2.5">区分</th>
+                <th class="py-2.5 px-3 min-w-[180px] whitespace-normal">食事内容・工夫メモ</th>
+                <th class="py-2.5 px-2.5 text-center">糖質(g)</th>
+                <th class="py-2.5 px-2.5 text-center">リブレ血糖値</th>
+                <th class="py-2.5 px-3 text-center">当日の血圧 (朝/晩)</th>
+              </tr>
+            </thead>
+            <tbody id="onscreen-table-body" class="divide-y divide-slate-100">
+              <!-- 動的生成 -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -574,7 +639,8 @@
       <!-- QRコード同期パネル -->
       <div id="panel-sync-qr" class="space-y-3">
         <p class="text-xs text-slate-500 leading-relaxed">
-          スマホの画面にQRを表示し、タブレットのカメラでかざすだけで同期します。
+          スマホの画面にQRを表示し、タブレットのカメラでかざすだけで同期します。<br>
+          <span class="text-emerald-700 font-semibold">※タブレット標準のカメラアプリでかざしても一発で認識できます！</span>
         </p>
 
         <div class="grid grid-cols-2 gap-2">
@@ -586,42 +652,53 @@
           <button type="button" id="btn-scan-qr-mode" class="p-3 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200 rounded-2xl flex flex-col items-center justify-center text-center gap-1 transition">
             <i class="fa-solid fa-camera text-indigo-600 text-2xl"></i>
             <span class="text-xs font-bold text-indigo-900">タブレット側</span>
-            <span class="text-[10px] text-indigo-700">カメラで読み取る</span>
+            <span class="text-[10px] text-indigo-700">このアプリで読み取る</span>
           </button>
         </div>
 
         <div id="qr-display-box" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center space-y-3">
           <div class="flex items-center justify-center gap-2">
             <span class="text-xs text-slate-600 font-medium">同期期間:</span>
-            <button type="button" id="btn-qr-days-14" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs">直近14日分</button>
+            <button type="button" id="btn-qr-days-14" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs">直近14日分 (推奨)</button>
             <button type="button" id="btn-qr-days-30" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600">直近30日分</button>
           </div>
 
           <!-- 分割QR切り替えボタン（データ量が多い場合に自動出現） -->
-          <div id="qr-split-controls" class="hidden flex items-center justify-center gap-2 pt-1">
+          <div id="qr-split-controls" class="hidden flex flex-col items-center justify-center gap-1.5 pt-1">
             <span class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-              <i class="fa-solid fa-layer-group mr-1"></i>30日分大容量: 2枚に分割
+              <i class="fa-solid fa-layer-group mr-1"></i>30日分大容量: 2枚に分割表示
             </span>
-            <div class="flex gap-1">
-              <button type="button" id="btn-qr-part-1" class="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs">1枚目 (1/2)</button>
-              <button type="button" id="btn-qr-part-2" class="px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600">2枚目 (2/2)</button>
+            <div class="flex gap-2">
+              <button type="button" id="btn-qr-part-1" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-xs">1枚目 (1/2)</button>
+              <button type="button" id="btn-qr-part-2" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-600">2枚目 (2/2)</button>
             </div>
           </div>
 
-          <div id="qrcode-container" class="flex justify-center p-3 bg-white rounded-xl shadow-xs mx-auto w-fit"></div>
-          <p id="qr-size-note" class="text-[11px] text-slate-500 font-medium">タブレットのカメラで読み取ってください</p>
+          <!-- QRコード表示エリア（大きくクリアに） -->
+          <div id="qrcode-container" class="flex justify-center p-3.5 bg-white rounded-2xl shadow-md mx-auto w-fit min-h-[260px] items-center"></div>
+          <p id="qr-size-note" class="text-xs text-slate-600 font-medium">タブレットのカメラを近づけてピントを合わせてください</p>
         </div>
 
-        <div id="qr-scanner-box" class="hidden space-y-2">
+        <div id="qr-scanner-box" class="hidden space-y-2.5">
           <!-- 読み取り進捗表示バッジ -->
-          <div id="scanner-progress-badge" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold py-1.5 px-3 rounded-xl text-center flex items-center justify-center gap-1.5">
+          <div id="scanner-progress-badge" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold py-2 px-3 rounded-xl text-center flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-circle-check text-emerald-600"></i>
             <span id="scanner-progress-text">1枚目を読取完了！2枚目をかざしてください</span>
           </div>
-          <div class="relative rounded-2xl overflow-hidden border border-slate-300 bg-black">
+
+          <div class="relative rounded-2xl overflow-hidden border-2 border-indigo-400 bg-black shadow-inner">
             <div id="qr-reader" class="w-full"></div>
+            <!-- ピント合わせガイド -->
+            <div class="pointer-events-none absolute inset-0 border-2 border-dashed border-white/60 m-8 rounded-xl flex items-center justify-center">
+              <span class="text-[11px] text-white/90 bg-black/50 px-2 py-1 rounded-md backdrop-blur-xs">枠内にQRコードを収めてください</span>
+            </div>
           </div>
-          <button type="button" id="btn-stop-scanner" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">
+          
+          <p class="text-[11px] text-slate-400 text-center">
+            ※認識しづらい場合は、タブレットを前後に動かしてピントを合わせるか、タブレット標準のカメラアプリをお試しください
+          </p>
+
+          <button type="button" id="btn-stop-scanner" class="w-full py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition">
             カメラを終了する
           </button>
         </div>
@@ -1041,6 +1118,15 @@
     const btnStopScanner = document.getElementById('btn-stop-scanner');
     const btnDownloadBackup = document.getElementById('btn-download-backup');
     const fileImportBackup = document.getElementById('file-import-backup');
+
+    // 表示モード切り替えタブ＆一覧表エレメント
+    const tabViewDaily = document.getElementById('tab-view-daily');
+    const tabViewTable = document.getElementById('tab-view-table');
+    const viewDailyWrapper = document.getElementById('view-daily-wrapper');
+    const viewTableWrapper = document.getElementById('view-table-wrapper');
+    const onscreenTableBody = document.getElementById('onscreen-table-body');
+    const btnTableRanges = document.querySelectorAll('.btn-table-range');
+    let activeTableDays = 14; // デフォルト14日分
 
     const btnOpenSync = document.getElementById('btn-open-sync');
     const syncModal = document.getElementById('sync-modal');
@@ -1521,7 +1607,144 @@
       renderMealsList();
       updateStats();
       renderTrendChart();
+      renderOnscreenTable();
     }
+
+    // 画面上で直接見れる記録一覧表の描画処理
+    function renderOnscreenTable() {
+      if (!onscreenTableBody) return;
+      onscreenTableBody.innerHTML = '';
+
+      let meals = [...allMeals];
+      meals.sort((a, b) => {
+        const dComp = b.date.localeCompare(a.date); // 新しい日付順
+        return dComp !== 0 ? dComp : (b.time || '').localeCompare(a.time || '');
+      });
+
+      if (activeTableDays !== 'all') {
+        const days = parseInt(activeTableDays, 10);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+        meals = meals.filter(m => m.date >= cutoffStr);
+      }
+
+      if (meals.length === 0) {
+        onscreenTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center py-8 text-slate-400">
+              <i class="fa-solid fa-inbox text-2xl mb-2 block"></i>
+              該当する期間の食事記録がありません
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      meals.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition cursor-pointer';
+
+        // 区分バッジ色
+        let typeBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        if (m.type === '昼食') typeBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+        if (m.type === '夕食') typeBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        if (m.type === '間食・夜食') typeBadgeClass = 'bg-purple-50 text-purple-700 border-purple-200';
+
+        // 血糖値表示とスパイクΔ
+        let bsDisplay = '<span class="text-slate-300">-</span>';
+        if (m.preBloodSugar && m.postBloodSugar) {
+          const diff = Number(m.postBloodSugar) - Number(m.preBloodSugar);
+          const sign = diff >= 0 ? `+${diff}` : `${diff}`;
+          const isHighSpike = diff >= 50;
+          bsDisplay = `
+            <div class="flex items-center justify-center gap-1">
+              <span class="text-slate-600 font-medium">${escapeHtml(m.preBloodSugar)} ➔</span>
+              <span class="font-bold ${Number(m.postBloodSugar) >= 180 ? 'text-rose-600' : 'text-slate-800'}">${escapeHtml(m.postBloodSugar)}</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${isHighSpike ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">Δ${sign}</span>
+            </div>
+          `;
+        } else if (m.postBloodSugar) {
+          bsDisplay = `<span class="font-bold ${Number(m.postBloodSugar) >= 180 ? 'text-rose-600' : 'text-slate-800'}">食後: ${escapeHtml(m.postBloodSugar)}</span>`;
+        } else if (m.preBloodSugar) {
+          bsDisplay = `<span class="text-slate-600">食前: ${escapeHtml(m.preBloodSugar)}</span>`;
+        }
+
+        // 当日の朝晩血圧
+        const daily = dailyRecords[m.date] || {};
+        let bpText = '<span class="text-slate-300">-</span>';
+        const parts = [];
+        if (daily.bpMorningSys && daily.bpMorningDia) parts.push(`朝 ${daily.bpMorningSys}/${daily.bpMorningDia}`);
+        if (daily.bpEveningSys && daily.bpEveningDia) parts.push(`晩 ${daily.bpEveningSys}/${daily.bpEveningDia}`);
+        if (parts.length > 0) {
+          bpText = `<span class="font-semibold text-slate-700">${parts.join(' | ')}</span>`;
+        }
+
+        // 日付フォーマット表示 (例: 10/24(金))
+        const dObj = new Date(m.date);
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+        const dayBadge = !isNaN(dObj.getTime()) ? `(${dayNames[dObj.getDay()]})` : '';
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-3">
+            <div class="font-bold text-slate-800">${m.date.substring(5)} <span class="text-[11px] font-normal text-slate-500">${dayBadge}</span></div>
+            <div class="text-[11px] text-slate-400">${escapeHtml(m.time || '--:--')}</div>
+          </td>
+          <td class="py-2.5 px-2.5">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${typeBadgeClass}">${escapeHtml(m.type)}</span>
+          </td>
+          <td class="py-2.5 px-3 whitespace-normal">
+            <div class="font-medium text-slate-800 leading-snug">${escapeHtml(m.content)}</div>
+            ${m.carb ? `<div class="text-[10px] text-slate-400 mt-0.5"><i class="fa-solid fa-note-sticky mr-1"></i>${escapeHtml(m.carb)}</div>` : ''}
+          </td>
+          <td class="py-2.5 px-2.5 text-center font-bold text-violet-700">
+            ${m.carbs !== '' && m.carbs !== undefined && m.carbs !== null ? m.carbs + 'g' : '-'}
+          </td>
+          <td class="py-2.5 px-2.5 text-center">
+            ${bsDisplay}
+          </td>
+          <td class="py-2.5 px-3 text-center text-[11px]">
+            ${bpText}
+          </td>
+        `;
+
+        // 行をクリックするとその食事の編集モーダルを開く
+        tr.addEventListener('click', () => {
+          openEditMealModal(m);
+        });
+
+        onscreenTableBody.appendChild(tr);
+      });
+    }
+
+    // 表示切り替えタブ（1日ごと vs 一覧表）イベント
+    tabViewDaily.addEventListener('click', () => {
+      viewDailyWrapper.classList.remove('hidden');
+      viewTableWrapper.classList.add('hidden');
+      tabViewDaily.className = 'flex-1 py-2 rounded-xl bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabViewTable.className = 'flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+    });
+
+    tabViewTable.addEventListener('click', () => {
+      viewDailyWrapper.classList.add('hidden');
+      viewTableWrapper.classList.remove('hidden');
+      tabViewTable.className = 'flex-1 py-2 rounded-xl bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      tabViewDaily.className = 'flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+      renderOnscreenTable();
+    });
+
+    // 一覧表の期間切り替えボタン群イベント
+    btnTableRanges.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btnTableRanges.forEach(b => {
+          b.className = 'btn-table-range px-2.5 py-1 rounded-lg text-slate-600 transition';
+        });
+        btn.className = 'btn-table-range px-2.5 py-1 rounded-lg bg-white text-emerald-800 shadow-xs transition';
+        const days = btn.dataset.tableDays;
+        activeTableDays = days === 'all' ? 'all' : parseInt(days, 10);
+        renderOnscreenTable();
+      });
+    });
 
     btnPrevDay.addEventListener('click', () => {
       saveCurrentDailyRecord();
@@ -2168,13 +2391,14 @@
 
     function renderQrCodeGraphic(text) {
       qrcodeContainer.innerHTML = '';
+      // 認識精度を高めるためサイズを 260px に拡大し、コントラストを最大化
       new QRCode(qrcodeContainer, {
         text: text,
-        width: 230,
-        height: 230,
-        colorDark: '#0f172a',
+        width: 260,
+        height: 260,
+        colorDark: '#000000',
         colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.L
+        correctLevel: QRCode.CorrectLevel.M // 汚れ・ピンボケに強いMレベルに調整
       });
     }
 
@@ -2185,20 +2409,25 @@
 
       const payload = buildUltraCompactPayload(days);
       const rawJson = JSON.stringify(payload);
-      const compressed = LZString.compressToBase64(rawJson);
+      const compressed = LZString.compressToEncodedURIComponent(rawJson);
 
-      // QRコード1枚で安全に表示・読取可能な文字数（約800文字以下）
-      if (compressed.length <= 800) {
+      // タブレット標準カメラでもWebアプリのURLとして直接開けるリンク形式に対応
+      // (現在のページURL + #sync=圧縮データ)
+      const baseUrl = window.location.href.split('#')[0];
+      const directSyncUrl = `${baseUrl}#s=${compressed}`;
+
+      // 1枚で安全にスキャン可能な閾値（URL含め約800文字以下）
+      if (directSyncUrl.length <= 850) {
         try {
-          renderQrCodeGraphic('Q1:' + compressed);
-          qrSizeNote.textContent = `直近${days}日分（1枚で読み取り完了）`;
+          renderQrCodeGraphic(directSyncUrl);
+          qrSizeNote.innerHTML = `直近${days}日分 <span class="text-emerald-700 font-bold">（標準カメラでも認識可能）</span>`;
           showToast(`直近${days}日分のQRコードを表示しました`);
         } catch (err) {
           console.error(err);
           setupSplitQrCodes(compressed, days);
         }
       } else {
-        // 800文字を超える場合は確実に読み取れるよう自動2分割
+        // 850文字を超える場合は確実に読み取れるよう自動2分割
         setupSplitQrCodes(compressed, days);
       }
     }
@@ -2218,7 +2447,7 @@
       setSplitPartButtonState(0);
       renderQrCodeGraphic(qrSplitDataParts[0]);
 
-      qrSizeNote.innerHTML = `<span class="text-amber-700 font-bold">【1枚目 / 全2枚】</span> タブレットにかざしてください`;
+      qrSizeNote.innerHTML = `<span class="text-amber-700 font-bold">【1枚目 / 全2枚】</span> タブレットを近づけてかざしてください`;
       showToast(`30日分のため2枚に分割表示しました（1枚目を表示中）`);
     }
 
@@ -2385,24 +2614,140 @@
         stopCameraScanner();
       }
 
-      html5QrScannerInstance = new Html5Qrcode("qr-reader");
-      const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+      // ネイティブBarcodeDetectorの利用を有効化し、高速・高精細読み取り
+      html5QrScannerInstance = new Html5Qrcode("qr-reader", {
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        },
+        verbose: false
+      });
+
+      // 解像度をフルHD〜HD優先にし、オートフォーカス・フレームレートを最適化
+      const cameraConfig = {
+        facingMode: "environment",
+        focusMode: "continuous"
+      };
+
+      const scanConfig = {
+        fps: 15, // 認識頻度を向上
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          // 画面全体に近い広めのスキャン枠（75%）を自動計算し、画面端でも認識可能に
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const edgeSize = Math.floor(minEdge * 0.75);
+          return { width: edgeSize, height: edgeSize };
+        },
+        aspectRatio: 1.0
+      };
 
       html5QrScannerInstance.start(
-        { facingMode: "environment" },
-        config,
+        cameraConfig,
+        scanConfig,
         (decodedText) => {
-          try {
-            // 単一QRコード（Q1:）の場合
-            if (decodedText.startsWith('Q1:')) {
-              const base64Data = decodedText.substring(3);
-              const jsonString = LZString.decompressFromBase64(base64Data);
-              const data = JSON.parse(jsonString);
-              if (applySyncedData(data)) {
-                stopCameraScanner();
-                syncModal.classList.add('hidden');
-                showToast('✨ タブレットに最新データを同期完了しました！');
-              }
+          handleIncomingSyncString(decodedText);
+        },
+        () => {}
+      ).catch(err => {
+        console.error("Camera start error with advanced config, falling back to simple:", err);
+        // 万が一カメラ起動に失敗した場合はシンプル設定でリトライ
+        html5QrScannerInstance.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => handleIncomingSyncString(decodedText),
+          () => {}
+        ).catch(e => {
+          showToast('カメラへのアクセスを許可してください');
+        });
+      });
+    });
+
+    // 読み取った文字列（URL形式・単一形式・分割形式）を判定して復元する共通関数
+    function handleIncomingSyncString(decodedText) {
+      try {
+        // 1. URLリンク形式 (#s= または #sync=) の場合（タブレット標準カメラでもここを通過）
+        if (decodedText.includes('#s=')) {
+          const compressed = decodedText.split('#s=')[1];
+          const jsonString = LZString.decompressFromEncodedURIComponent(compressed);
+          const data = JSON.parse(jsonString);
+          if (applySyncedData(data)) {
+            stopCameraScanner();
+            syncModal.classList.add('hidden');
+            showToast('✨ タブレットに最新データを同期完了しました！');
+          }
+          return;
+        }
+
+        // 2. 単一QRコード（Q1:）の場合
+        if (decodedText.startsWith('Q1:')) {
+          const base64Data = decodedText.substring(3);
+          let jsonString = LZString.decompressFromBase64(base64Data);
+          if (!jsonString) jsonString = LZString.decompressFromEncodedURIComponent(base64Data);
+          const data = JSON.parse(jsonString);
+          if (applySyncedData(data)) {
+            stopCameraScanner();
+            syncModal.classList.add('hidden');
+            showToast('✨ タブレットに最新データを同期完了しました！');
+          }
+          return;
+        }
+
+        // 3. 分割QRコード（SP:part:total:data）の場合
+        if (decodedText.startsWith('SP:')) {
+          const parts = decodedText.split(':');
+          const curPart = parts[1];
+          const totalParts = parts[2];
+          const chunkData = parts.slice(3).join(':');
+
+          scannerReceivedParts[curPart] = chunkData;
+
+          if (Object.keys(scannerReceivedParts).length < Number(totalParts)) {
+            scannerProgressBadge.classList.remove('hidden');
+            scannerProgressText.textContent = `1枚目を読取完了！続けて2枚目をかざしてください`;
+            showToast(`1枚目を読取完了！2枚目をかざしてください`);
+          } else {
+            const fullCompressed = scannerReceivedParts['1'] + scannerReceivedParts['2'];
+            let jsonString = LZString.decompressFromEncodedURIComponent(fullCompressed);
+            if (!jsonString) jsonString = LZString.decompressFromBase64(fullCompressed);
+            const data = JSON.parse(jsonString);
+            if (applySyncedData(data)) {
+              stopCameraScanner();
+              syncModal.classList.add('hidden');
+              showToast('✨ 30日分のデータをタブレットに同期完了しました！');
+            }
+          }
+          return;
+        }
+
+        // 4. その他のJSON直接
+        const data = JSON.parse(decodedText);
+        if (applySyncedData(data)) {
+          stopCameraScanner();
+          syncModal.classList.add('hidden');
+          showToast('✨ タブレットに最新データを同期完了しました！');
+        }
+      } catch (e) {
+        console.error('Sync parse error:', e);
+      }
+    }
+
+    // URLハッシュからの自動同期検知（タブレット標準カメラでQRを読んだ時に起動）
+    function checkUrlHashSync() {
+      if (window.location.hash && window.location.hash.startsWith('#s=')) {
+        try {
+          const compressed = window.location.hash.replace('#s=', '');
+          const jsonString = LZString.decompressFromEncodedURIComponent(compressed);
+          if (jsonString) {
+            const data = JSON.parse(jsonString);
+            if (applySyncedData(data)) {
+              // URLのハッシュを綺麗に戻す
+              history.replaceState(null, '', window.location.pathname + window.location.search);
+              showToast('✨ タブレットに最新データを同期完了しました！');
+            }
+          }
+        } catch (e) {
+          console.error('URL hash sync error:', e);
+        }
+      }
+    }
               return;
             }
 
@@ -2584,6 +2929,7 @@
       loadData();
       renderApp();
       initSpeechRecognition();
+      checkUrlHashSync(); // ページ起動時のURLハッシュ同期チェック
     });
   </script>
 </body>
